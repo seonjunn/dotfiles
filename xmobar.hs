@@ -1,7 +1,7 @@
 Config { 
 
    -- appearance
-     font =         "xft:MesloLGS NF:size=16:bold:antialias=true"
+     font =         "xft:NanumGothic:size=16:bold:antialias=true"
    , bgColor =      "#6272a4"
    , fgColor =      "#f8f8f2"
    , position =     Top
@@ -11,10 +11,11 @@ Config {
    -- layout
    , sepChar =  "%"   -- delineator between plugin names and straight text
    , alignSep = "}{"  -- separator between left-right alignment
-   , template = " %StdinReader% }{ %multicpu% | %memory% | %dynnetwork% | %date% "
+   --, template = " %StdinReader% }{ %multicpu% | %memory% | %dynnetwork% | %date% "
+   , template = " %StdinReader% }{ %date% "
 
    -- general behavior
-   , lowerOnStart =     True    -- send to bottom of window stack on start
+   , lowerOnStart =     False    -- send to bottom of window stack on start
    , hideOnStart =      False   -- start with window unmapped (hidden)
    , allDesktops =      True    -- show on all desktops
    , overrideRedirect = True    -- set the Override Redirect flag (Xlib)

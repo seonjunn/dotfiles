@@ -1,7 +1,6 @@
 --
 -- IMORTS
 --
-
 import XMonad
 import Data.Monoid
 import System.Exit
@@ -16,18 +15,21 @@ import XMonad.Hooks.SetWMName
 import XMonad.Layout.Reflect
 import XMonad.Layout.ShowWName
 import XMonad.Layout.Spacing
+import XMonad.Layout.IndependentScreens
 
 import qualified XMonad.StackSet as W
 import qualified Data.Map        as M
 
--- The preferred terminal program, which is used in a binding below and by
--- certain contrib modules.
---
+
+myTerminal      :: [Char]
 myTerminal      = "kitty"
+
+myModMask       :: KeyMask
+myModMask       = mod4Mask
 
 -- Whether focus follows the mouse pointer.
 myFocusFollowsMouse :: Bool
-myFocusFollowsMouse = True
+myFocusFollowsMouse = False
 
 -- Whether clicking on a window to focus also passes the click to the window
 myClickJustFocuses :: Bool
@@ -35,14 +37,9 @@ myClickJustFocuses = False
 
 -- Width of the window border in pixels.
 --
+myBorderWidth   :: Dimension
 myBorderWidth   = 5
 
--- modMask lets you specify which modkey you want to use. The default
--- is mod1Mask ("left alt").  You may also consider using mod3Mask
--- ("right alt"), which does not conflict with emacs keybindings. The
--- "windows key" is usually mod4Mask.
---
-myModMask       = mod4Mask
 
 -- The default number of workspaces (virtual screens) and their names.
 -- By default we use numeric strings, but any string may be used as a
@@ -53,12 +50,13 @@ myModMask       = mod4Mask
 --
 -- > workspaces = ["web", "irc", "code" ] ++ map show [4..9]
 --
-myWorkspaces    = ["1","2","3","4","5","6","7","8","9"]
+-- myWorkspaces    = ["1","2","3","4","5","6","7","8","9"]
+myWorkspaces nScreens = withScreens nScreens ["1","2","3","4","5","6","7","8","9"]
 
 -- Border colors for unfocused and focused windows, respectively.
 --
 myNormalBorderColor  = "#dddddd"
-myFocusedBorderColor = "#8be9fd"
+myFocusedBorderColor = "#ff79c6"
 
 ------------------------------------------------------------------------
 -- Key bindings. Add, modify or remove key bindings here.
@@ -78,7 +76,7 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     , ((modm .|. shiftMask, xK_l     ), spawn "i3lock -c 112211 -e -f"  )
 
     -- close focused window
-    , ((modm .|. shiftMask, xK_c     ), kill)
+    , ((modm              , xK_q     ), kill)
 
      -- Rotate through the available layout algorithms
     , ((modm,               xK_space ), sendMessage NextLayout)
@@ -94,6 +92,9 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
 
     -- Move focus to the next window
     , ((modm,               xK_j     ), windows W.focusDown)
+
+    -- Move focus to the previous window
+    , ((modm .|. shiftMask, xK_Tab   ), windows W.focusUp  )
 
     -- Move focus to the previous window
     , ((modm,               xK_k     ), windows W.focusUp  )
@@ -130,13 +131,13 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     -- Use this binding with avoidStruts from Hooks.ManageDocks.
     -- See also the statusBar function from Hooks.DynamicLog.
     --
-    -- , ((modm              , xK_b     ), sendMessage ToggleStruts)
+    , ((modm              , xK_b     ), sendMessage ToggleStruts)
 
     -- Quit xmonad
-    , ((modm .|. shiftMask, xK_q     ), io (exitWith ExitSuccess))
+    , ((modm .|. shiftMask, xK_x     ), io (exitWith ExitSuccess)) -- intentionally made it hard
 
     -- Restart xmonad
-    , ((modm              , xK_q     ), spawn "xmonad --recompile; xmonad --restart")
+    , ((modm .|. shiftMask, xK_q     ), spawn "xmonad --recompile; xmonad --restart")
 
     -- Run xmessage with a summary of the default keybindings (useful for beginners)
     , ((modm .|. shiftMask, xK_slash ), spawn ("echo \"" ++ help ++ "\" | xmessage -file -"))
@@ -147,8 +148,10 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     -- mod-[1..9], Switch to workspace N
     -- mod-shift-[1..9], Move client to workspace N
     --
-    [((m .|. modm, k), windows $ f i)
-        | (i, k) <- zip (XMonad.workspaces conf) [xK_1 .. xK_9]
+    --[((m .|. modm, k), windows $ f i)
+    [((m .|. modm, k), windows $ onCurrentScreen f i)
+        -- | (i, k) <- zip (XMonad.workspaces conf) [xK_1 .. xK_9]
+        | (i, k) <- zip (workspaces' conf) [xK_1 .. xK_9]
         , (f, m) <- [(W.greedyView, 0), (W.shift, shiftMask)]]
     ++
 
@@ -157,7 +160,7 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     -- mod-shift-{w,e,r}, Move client to screen 1, 2, or 3
     --
     [((m .|. modm, key), screenWorkspace sc >>= flip whenJust (windows . f))
-        | (key, sc) <- zip [xK_w, xK_e, xK_r] [0..]
+        | (key, sc) <- zip [xK_w, xK_e, xK_r] [1, 0, 2]
         , (f, m) <- [(W.view, 0), (W.shift, shiftMask)]]
 
 
@@ -246,13 +249,14 @@ myEventHook = mempty
 --
 myLogHook h = dynamicLogWithPP $ def
     { 
-        ppLayout = wrap "[<fc=#f1fa8c>" "</fc>]"
-        -- , ppSort = getSortByXineramaRule  
-        -- Sort left/right screens on the left, non-empty workspaces after those
-        , ppTitleSanitize = const ""  -- Also about window's title
-        , ppCurrent = wrap "<fc=#8be9fd>" "</fc>" -- Focused screen
-        , ppVisible = wrap "<fc=#ffb86c>" "</fc>"  -- Non-focused (but still visible) screen
-        , ppOutput = hPutStrLn h
+        ppTitle = xmobarColor "yellow" "" . shorten 50,
+        --ppTitle = wrap "<fc=#ffffff>" "</fc>",
+        --ppLayout = wrap "[<fc=#f1fa8c>" "</fc>]",
+        ppCurrent = wrap "<fc=#8be9fd>[</fc>" "<fc=#8be9fd>]</fc>",
+        ppVisible = wrap "<fc=#ffb86c>(</fc>" "<fc=#ffb86c>)</fc>",
+        ppHidden = wrap "<fc=#6272a4>[</fc>" "<fc=#6272a4>]</fc>",
+        --ppWsSep = "|",
+        ppOutput = hPutStrLn h
     }
 
 -- todo
@@ -268,9 +272,10 @@ myLogHook h = dynamicLogWithPP $ def
 --
 -- By default, do nothing.
 myStartupHook = do
-	spawnOnce "xrandr --output DP-0 --rotate left" -- Set second monitor as vertical
-	spawnOnce "nitrogen --restore &" -- Restore wallpapers
-	spawnOnce "picom &" -- ?
+  spawnOnce "xrandr --output DP-0 --rotate left" -- Set second monitor as vertical
+  spawnOnce "nitrogen --restore &" -- Restore wallpapers
+  spawnOnce "picom &" -- ?
+  setWMName "LG3D"
     -- setWMName "LG3D" -- for android studio... i need to study haskell
 
 
@@ -279,6 +284,7 @@ myStartupHook = do
 
 main = do
    xmobarProc <- spawnPipe "xmobar -x 0 /home/sk1m/.config/xmobar/xmobarrc"
+   nScreens <- countScreens
    xmonad $ docks $ def {
       -- simple stuff
         terminal           = myTerminal,
@@ -286,7 +292,7 @@ main = do
         clickJustFocuses   = myClickJustFocuses,
         borderWidth        = myBorderWidth,
         modMask            = myModMask,
-        workspaces         = myWorkspaces,
+        workspaces         = myWorkspaces nScreens,
         normalBorderColor  = myNormalBorderColor,
         focusedBorderColor = myFocusedBorderColor,
 

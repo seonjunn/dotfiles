@@ -3,3 +3,4 @@
 	name = sk1m
 [alias]
     co = checkout
+    lg = log --branches --graph --decorate --oneline

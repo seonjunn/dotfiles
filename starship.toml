@@ -1,0 +1,22 @@
+# Inserts a blank line between shell prompts
+add_newline = true
+
+[character]
+error_symbol = "[❯](bold red)[✖](bold red)[❯](bold red)"
+success_symbol = "[❯](bold blue)[❯](bold green)[❯](bold blue)"
+
+[username]
+style_user = "bold white"
+show_always = true
+format = "[$user]($style)[ @ ](bold green)"
+
+# Disable the package module, hiding it from the prompt completely
+[package]
+disabled = true
+
+[git_status]
+modified = " M${count} "
+staged = " S${count} "
+renamed = " R${count} "
+deleted = " D${count} "
+style = "bold white"

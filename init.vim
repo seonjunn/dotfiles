@@ -20,5 +20,3 @@ call plug#begin('~/.local/share/nvim/plugged')
 "   ocp indentation
 Plug 'let-def/ocp-indent-vim'
 call plug#end()
-
-" TEST

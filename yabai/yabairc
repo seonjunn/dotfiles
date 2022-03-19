@@ -56,7 +56,7 @@ friends_of_keyboard="kitty|Firefox|Notion"
 yabai -m rule --add app!="^($friends_of_keyboard)$" manage=off
 
 # Clean up empty spaces with no windows on them.
-yabai -m signal --add event=space_changed action="sh ~/.config/yabai/scripts/cleanEmptySpaces.sh"
-yabai -m signal --add event=space_changed action="sh ~/.config/yabai/scripts/showCurrentSpaceNum.sh > ~/num"
+#yabai -m signal --add event=space_changed action="sh ~/.config/yabai/scripts/cleanEmptySpaces.sh"
+#yabai -m signal --add event=space_changed action="sh ~/.config/yabai/scripts/showCurrentSpaceNum.sh > ~/num"
 
 echo "yabai configuration loaded.."

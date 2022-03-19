@@ -216,6 +216,12 @@ alt - s : yabai -m space --create && \
           yabai -m query --spaces --display | \
           jq 'map(select(."is-native-fullscreen" == false))[-1].index' | \
           xargs yabai -m space --focus
+shift + alt - s : yabai -m query --spaces | \
+                  jq 'map(select(."has-focus" == true))'[0].index | \
+                  xargs -I % sh -c 'yabai -m space % --destroy' && \
+                  yabai -m query --spaces --display | \
+                  jq 'map(select(."is-native-fullscreen" == false))[-1].index' | \
+                  xargs yabai -m space --focus
 
 # change desktop focus
 alt - 1 : yabai -m space --focus 1

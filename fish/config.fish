@@ -7,14 +7,43 @@ set fish_greeting
 
 # paths
 export PATH="$HOME/.local/bin:$PATH"
-export PATH="$HOME/.cargo/bin:$PATH"
 export PATH="$HOME/.emacs.d/bin:$PATH"
+export PATH="$HOME/.cargo/bin:$PATH"
 
 #aliases
 alias cat   "batcat"
 alias lx    "exa -l"
 alias rm    "rm -i"
 alias vif   "vim (fzf --preview 'batcat --color=always --style=numbers --line-range=:500 {}')"
+
+set __fish_git_prompt_show_informative_status
+
+function fish_prompt
+	set_color brblack
+	echo -n "["(date "+%H:%M")"] "
+
+	set_color 3bb 
+    echo -n (whoami)
+
+	set_color bbb 
+    echo -n "."
+
+	set_color b6b 
+    echo -n (hostname) | sed 's/.local//'
+	if [ $PWD != $HOME ]
+		set_color brblack
+		echo -n ':'
+		set_color yellow
+		echo -n (basename $PWD)
+	end
+	set_color green
+	printf '%s ' (fish_git_prompt)
+	set_color red
+	echo -n '| '
+	set_color normal
+end
+
+
 
 
 # Generated for envman. Do not edit.

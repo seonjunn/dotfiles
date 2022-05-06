@@ -13,6 +13,13 @@ set cindent
 set expandtab
 set tabstop=4
 set shiftwidth=4
+if has("autocmd")
+    filetype plugin indent on
+endif
+" for command mode
+nnoremap <S-Tab> <<
+" for insert mode
+inoremap <S-Tab> <C-d>
 
 " line number
 set number relativenumber

@@ -1,6 +1,29 @@
+##########################################
+# delta as git diff
+[core]
+    pager = delta
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true  # use n and N to move between diff sections
+
+[merge]
+    conflictstyle = diff3
+
+[diff]
+    colorMoved = default
+##########################################
+
+
 [user]
-	email = knuneos@gmail.com
-	name = sk1m
+	email = cyanide17@snu.ac.kr
+	name = Seonjun Kim
+[credential]
+	helper = store
+[core]
+    editor = vim
 [alias]
     co = checkout
     lg = log --branches --graph --decorate --oneline

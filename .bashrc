@@ -136,8 +136,6 @@ unset __conda_setup
 # Generated for envman. Do not edit.
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
 
-. "$HOME/.cargo/env"
-
 ###
 export TERM=xterm-256color
 export PATH="$HOME/.local/bin:$PATH"

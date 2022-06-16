@@ -1,16 +1,20 @@
 # This file contains fish universal variable definitions.
 # VERSION: 3.0
 SETUVAR __fish_initialized:3100
-SETUVAR _fish_abbr_c:xclip
-SETUVAR _fish_abbr_cat:batcat
-SETUVAR _fish_abbr_cc:xclip\x20\x2dselection\x20clipboard
-SETUVAR _fish_abbr_g:git
+SETUVAR _fish_abbr_bat:batcat
+SETUVAR _fish_abbr_ga:git\x20add\x20\x2e
+SETUVAR _fish_abbr_gcm:git\x20commit
+SETUVAR _fish_abbr_gco:git\x20checkout
+SETUVAR _fish_abbr_gd:git\x20diff
+SETUVAR _fish_abbr_gl:git\x20lg
+SETUVAR _fish_abbr_gpl:git\x20pull
+SETUVAR _fish_abbr_gps:git\x20push
+SETUVAR _fish_abbr_gst:git\x20status
 SETUVAR _fish_abbr_l:exa\x20\x2dl
 SETUVAR _fish_abbr_ll:exa\x20\x2dl
 SETUVAR _fish_abbr_lll:exa\x20\x2dla
 SETUVAR _fish_abbr_ls:exa
 SETUVAR _fish_abbr_py:python3
-SETUVAR _fish_abbr_v:xclip\x20\x2do
 SETUVAR _fisher_dracula_2F_fish_files:/home/skim/\x2econfig/fish/conf\x2ed/dracula\x2efish
 SETUVAR _fisher_jorgebucaran_2F_fisher_files:/home/skim/\x2econfig/fish/functions/fisher\x2efish\x1e/home/skim/\x2econfig/fish/completions/fisher\x2efish
 SETUVAR _fisher_plugins:jorgebucaran/fisher\x1edracula/fish

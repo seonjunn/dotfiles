@@ -1,36 +1,40 @@
 if status is-interactive
+    # Commands to run in interactive sessions can go here
 end
 
 # Mute fish greeting
 set fish_greeting
 
-# plugins
-#zoxide init fish | source
+# paths
+export PATH="$HOME/.local/bin:$PATH"
+
+alias vif   "vim (fzf --preview 'batcat --color=always --style=numbers --line-range=:500 {}')"
 
 # abbr
-abbr -a v "vim"
-abbr -a py "python3"
+abbr py     "python3"
+
+abbr ga     "git add ."
+abbr gcm    "git commit"
+abbr gps    "git push"
+abbr gpl    "git pull"
+abbr gco    "git checkout"
+abbr gd     "git diff"
+abbr gl     "git lg"
+abbr gst    "git status"
+
 
 if command -v exa > /dev/null
 	abbr -a l   'exa -l'
 	abbr -a ls  'exa'
 	abbr -a ll  'exa -l'
-	abbr -a lla 'exa -la'
+	abbr -a lll 'exa -la'
 else
 	abbr -a l   'ls'
 	abbr -a ll  'ls -l'
-	abbr -a la  'ls -a'
-	abbr -a lla 'ls -la'
+	abbr -a lll 'ls -la'
 end
 
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-eval /opt/miniconda3/bin/conda "shell.fish" "hook" $argv | source
-# <<< conda initialize <<<
-
-
-# Generated for envman. Do not edit.
-test -s "$HOME/.config/envman/load.fish"; and source "$HOME/.config/envman/load.fish"
+set __fish_git_prompt_show_informative_status
 
 function fish_prompt
 	set_color brblack
@@ -51,7 +55,7 @@ function fish_prompt
 		echo -n (basename $PWD)
 	end
 	set_color green
-	printf '%s ' (__fish_git_prompt)
+	printf '%s ' (fish_git_prompt)
 	set_color red
 	echo -n '| '
 	set_color normal

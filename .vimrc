@@ -35,15 +35,6 @@ set incsearch
 set nowrapscan
 set ignorecase
 
-" plugins
-call plug#begin()
-"Plug 'vim-python/python-syntax'
-call plug#end()
-
-" vim-python/python-syntax
-"let g:python_highlight_all = 1
-"let g:python_highlight_space_errors = 0
-
 " abbrevation
 iabbr <expr> __time strftime("%Y-%m-%d %H:%M:%S")
 iabbr <expr> __file expand('%:p')

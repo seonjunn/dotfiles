@@ -8,8 +8,6 @@ set fish_greeting
 # paths
 export PATH="$HOME/.local/bin:$PATH"
 
-alias vif   "vim (fzf --preview 'batcat --color=always --style=numbers --line-range=:500 {}')"
-
 # abbr
 abbr py     "python3"
 

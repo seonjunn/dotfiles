@@ -11,16 +11,25 @@ export PATH="$HOME/.emacs.d/bin:$PATH"
 export PATH="$HOME/.cargo/bin:$PATH"
 
 zoxide init fish | source
+thefuck --alias | source
 
 alias vif   "vim (fzf --preview 'batcat --color=always --style=numbers --line-range=:500 {}')"
 
 # abbr
-abbr cat    "batcat"
 abbr py     "python3"
-abbr g      "git"
-abbr c      "xclip"
-abbr cc     "xclip -selection clipboard"
-abbr v      "xclip -o"
+abbr fr     "friendly"
+abbr bat    "batcat"
+
+abbr ga     "git add ."
+abbr gb     "git branch"
+abbr gcm    "git commit"
+abbr gps     "git push"
+abbr gpl     "git pull"
+abbr gco    "git checkout"
+abbr gd     "git diff"
+abbr gl     "git lg"
+abbr gst    "git status"
+
 
 if command -v exa > /dev/null
 	abbr -a l   'exa -l'
@@ -54,7 +63,7 @@ function fish_prompt
 		echo -n (basename $PWD)
 	end
 	set_color green
-	printf '%s ' (fish_git_prompt)
+	printf '%s ' (__fish_git_prompt)
 	set_color red
 	echo -n '| '
 	set_color normal

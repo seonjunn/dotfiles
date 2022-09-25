@@ -33,4 +33,16 @@ augroup END
 set hlsearch
 set incsearch
 set nowrapscan
-set ignorecase
+" set ignorecase
+
+" permenant undo
+set undofile
+set undodir=~/.vim/undodir
+
+" stop at underscore
+set iskeyword-=_
+
+" plugins
+call plug#begin()
+Plug 'mg979/vim-visual-multi', {'branch': 'master'}
+call plug#end()

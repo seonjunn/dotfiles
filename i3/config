@@ -30,11 +30,16 @@ exec --no-startup-id nm-applet
 # Set capslock to ctrl
 exec_always --no-startup-id "setxkbmap -option caps:ctrl_modifier"
 
-# Monitor Settings
-exec_always --no-startup-id "xrandr --output HDMI-0 --primary --left-of DVI-D-0"
-exec_always --no-startup-id "xrandr --output HDMI-0 --mode 2560x1440"
-exec_always --no-startup-id "xrandr --output DVI-D-0 --mode 2560x1440"
+# Disable screen saver & power saving feature
+exec_always --no-startup-id "xset s off; xset -dpms"
 
+# Monitor Settings
+exec_alwyas --no-startup-id "xrandr --output HDMI-0 --primary"
+exec_alwyas --no-startup-id "xrandr --output HDMI-0 --rotate left"
+exec_alwyas --no-startup-id "xrandr --output DVI-D-0 --rotate right"
+exec_alwyas --no-startup-id "xrandr --output HDMI-0 --left-of DVI-D-0"
+exec_alwyas --no-startup-id "xrandr --output HDMI-0 --mode 2560x1440"
+exec_alwyas --no-startup-id "xrandr --output DVI-D-0 --mode 2560x1440"
 
 # Stop focus following mouse
 focus_follows_mouse no
@@ -53,8 +58,7 @@ bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOU
 floating_modifier $mod
 
 # start a terminal
-set $myTerm kitty
-bindsym $mod+Return exec $myTerm
+bindsym $mod+Return exec kitty
 bindsym $alt+Return exec firefox
 
 # kill focused window
@@ -69,13 +73,14 @@ bindsym $mod+q kill
 bindsym $alt+space exec --no-startup-id rofi -show drun -show-icons
 
 # window designs
-gaps inner 10
+gaps inner 5
+gaps outer 0
 smart_gaps on
-for_window [class=".*"] border pixel 2
+for_window [class=".*"] border pixel 1
 # coolors.co
 # class                 border  bground text    indicator child_border
-client.focused          #6272A4 #6272A4 #F8F8F2 #17c3b2   #17c3b2
-client.focused_inactive #44475A #44475A #F8F8F2 #227c9d   #227c9d
+client.focused          #6272A4 #6272A4 #F8F8F2 #aaaabb   #aaaabb
+client.focused_inactive #44475A #44475A #F8F8F2 #111111   #111111
 client.unfocused        #282A36 #282A36 #BFBFBF #282A36   #282A36
 client.urgent           #44475A #FF5555 #F8F8F2 #FF5555   #FF5555
 client.placeholder      #282A36 #282A36 #F8F8F2 #282A36   #282A36
@@ -113,6 +118,7 @@ bindsym $mod+v split v
 
 # enter fullscreen mode for the focused container
 bindsym $mod+f fullscreen toggle
+bindsym $mod+Shift+f fullscreen toggle global
 
 # change container layout (stacked, tabbed, toggle split)
 bindsym $mod+s layout stacking
@@ -187,11 +193,18 @@ workspace $ws5 output $monL
 workspace $ws7 output $monL
 workspace $ws9 output $monL
 
+#workspace $ws1 output $monR
+#workspace $ws3 output $monR
+#workspace $ws5 output $monR
+#workspace $ws7 output $monR
+#workspace $ws9 output $monR
+
 workspace $ws2 output $monR
 workspace $ws4 output $monR
 workspace $ws6 output $monR
 workspace $ws8 output $monR
 workspace $ws10 output $monR
+
 
 # switch to workspace with urgent window automatically
 for_window [urgent=latest] focus
@@ -228,10 +241,10 @@ mode "resize" {
         # Pressing right will grow the window’s width.
         # Pressing up will shrink the window’s height.
         # Pressing down will grow the window’s height.
-        bindsym j resize shrink width 10 px or 10 ppt
-        bindsym k resize grow height 10 px or 10 ppt
-        bindsym l resize shrink height 10 px or 10 ppt
-        bindsym semicolon resize grow width 10 px or 10 ppt
+        bindsym h resize shrink width 10 px or 10 ppt
+        bindsym j resize grow height 10 px or 10 ppt
+        bindsym k resize shrink height 10 px or 10 ppt
+        bindsym l resize grow width 10 px or 10 ppt
 
         # same bindings, but for the arrow keys
         bindsym Left resize shrink width 10 px or 10 ppt

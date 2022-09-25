@@ -5,10 +5,15 @@ end
 # Mute fish greeting
 set fish_greeting
 
-# paths
+# ENVVARS
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.emacs.d/bin:$PATH"
 export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
+export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
+export LC_ALL=C
+
 
 zoxide init fish | source
 thefuck --alias | source
@@ -30,17 +35,17 @@ abbr gd     "git diff"
 abbr gl     "git lg"
 abbr gst    "git status"
 
+abbr tl     "tmux ls"
+abbr ta     "tmux attach"
+
 
 if command -v exa > /dev/null
-	abbr -a l   'exa -l'
-	abbr -a ls  'exa'
-	abbr -a ll  'exa -l'
-	abbr -a lll 'exa -la'
+	abbr -a l   'exa -l -s type'
 else
-	abbr -a l   'ls'
-	abbr -a ll  'ls -l'
-	abbr -a lll 'ls -la'
+    abbr -a l   'ls'
 end
+abbr -a ll  'ls -l'
+abbr -a lll 'ls -la'
 
 set __fish_git_prompt_show_informative_status
 

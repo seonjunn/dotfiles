@@ -39,6 +39,9 @@ abbr tl     "tmux ls"
 abbr ta     "tmux attach"
 
 
+#set fzf_preview_dir_cmd exa --all --color=always
+fzf_key_bindings
+
 if command -v exa > /dev/null
 	abbr -a l   'exa -l -s type'
 else
@@ -50,26 +53,32 @@ abbr -a lll 'ls -la'
 set __fish_git_prompt_show_informative_status
 
 function fish_prompt
-	set_color brblack
+	set_color 999
 	echo -n "["(date "+%H:%M")"] "
 
-	set_color 3bb 
+	set_color white 
     echo -n (whoami)
 
-	set_color bbb 
+	set_color brwhite 
     echo -n "."
 
-	set_color b6b 
+	set_color white
     echo -n (hostname) | sed 's/.local//'
 	if [ $PWD != $HOME ]
 		set_color brblack
 		echo -n ':'
-		set_color yellow
+		set_color 6fa
 		echo -n (basename $PWD)
 	end
-	set_color green
+	set_color f8a
 	printf '%s ' (__fish_git_prompt)
-	set_color red
-	echo -n '| '
+	set_color brcyan
+	echo -n '~>'
+    set_color -b normal
+    echo -n ' '
 	set_color normal
 end
+
+#starship init fish | source
+#
+cal;echo

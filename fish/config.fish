@@ -9,6 +9,7 @@ set fish_greeting
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.emacs.d/bin:$PATH"
 export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="$HOME/.android/Android/Sdk/platform-tools:$PATH"
 export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
 export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
 export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
@@ -27,12 +28,12 @@ abbr bat    "batcat"
 
 abbr ga     "git add ."
 abbr gb     "git branch"
-abbr gcm    "git commit"
+abbr gcm    "git commit -m"
 abbr gps     "git push"
 abbr gpl     "git pull"
 abbr gco    "git checkout"
 abbr gd     "git diff"
-abbr gl     "git lg"
+abbr gl     "git log --branches --graph --decorate --oneline"
 abbr gst    "git status"
 
 abbr tl     "tmux ls"
@@ -81,4 +82,11 @@ end
 
 #starship init fish | source
 #
-cal;echo
+cal|lolcat;echo
+
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+#eval /home/skim/.conda/bin/conda "shell.fish" "hook" $argv | source
+# <<< conda initialize <<<
+
+export TERM=xterm-256color

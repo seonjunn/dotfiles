@@ -5,10 +5,10 @@ SETUVAR _fish_abbr_bat:batcat
 SETUVAR _fish_abbr_fr:friendly
 SETUVAR _fish_abbr_ga:git\x20add\x20\x2e
 SETUVAR _fish_abbr_gb:git\x20branch
-SETUVAR _fish_abbr_gcm:git\x20commit
+SETUVAR _fish_abbr_gcm:git\x20commit\x20\x2dm
 SETUVAR _fish_abbr_gco:git\x20checkout
 SETUVAR _fish_abbr_gd:git\x20diff
-SETUVAR _fish_abbr_gl:git\x20lg
+SETUVAR _fish_abbr_gl:git\x20log\x20\x2d\x2dbranches\x20\x2d\x2dgraph\x20\x2d\x2ddecorate\x20\x2d\x2doneline
 SETUVAR _fish_abbr_gpl:git\x20pull
 SETUVAR _fish_abbr_gps:git\x20push
 SETUVAR _fish_abbr_gst:git\x20status

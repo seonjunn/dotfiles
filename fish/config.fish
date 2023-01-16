@@ -2,30 +2,18 @@ if status is-interactive
     # Commands to run in interactive sessions can go here
 end
 
-# Mute fish greeting
 set fish_greeting
 
-# ENVVARS
 export PATH="$HOME/.local/bin:$PATH"
-export PATH="$HOME/.emacs.d/bin:$PATH"
-export PATH="$HOME/.cargo/bin:$PATH"
-export PATH="$HOME/.android/Android/Sdk/platform-tools:$PATH"
-export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
-export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
-export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
-export LC_ALL=C
 
+alias vim "nvim"
+alias :q "exit"
+alias :wq "exit"
 
-zoxide init fish | source
-thefuck --alias | source
+# apt
+abbr sai "sudo apt install"
 
-alias vif   "vim (fzf --preview 'batcat --color=always --style=numbers --line-range=:500 {}')"
-
-# abbr
-abbr py     "python3"
-abbr fr     "friendly"
-abbr bat    "batcat"
-
+# git
 abbr ga     "git add ."
 abbr gb     "git branch"
 abbr gcm    "git commit -m"
@@ -36,13 +24,6 @@ abbr gd     "git diff"
 abbr gl     "git log --branches --graph --decorate --oneline"
 abbr gst    "git status"
 
-abbr tl     "tmux ls"
-abbr ta     "tmux attach"
-
-
-#set fzf_preview_dir_cmd exa --all --color=always
-fzf_key_bindings
-
 if command -v exa > /dev/null
 	abbr -a l   'exa -l -s type'
 else
@@ -51,7 +32,8 @@ end
 abbr -a ll  'ls -l'
 abbr -a lll 'ls -la'
 
-set __fish_git_prompt_show_informative_status
+# fzf key bindings
+fzf_key_bindings
 
 function fish_prompt
 	set_color 999
@@ -79,14 +61,5 @@ function fish_prompt
     echo -n ' '
 	set_color normal
 end
-
-#starship init fish | source
-#
-cal|lolcat;echo
-
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-#eval /home/skim/.conda/bin/conda "shell.fish" "hook" $argv | source
-# <<< conda initialize <<<
 
 export TERM=xterm-256color

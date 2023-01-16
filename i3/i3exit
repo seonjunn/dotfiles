@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 lock() {
-    $HOME/.config/i3lock/i3lock.sh
+    i3lock -c 1d1d2d
 }
 
 case "$1" in

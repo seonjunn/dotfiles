@@ -194,8 +194,9 @@ alt - q : yabai -m window --close
 alt - f : yabai -m window --toggle zoom-fullscreen
 
 # toggle layout of desktop (bsp <-> flaot)
-alt - e : yabai -m space --layout (yabai -m query --spaces --space | \
-          jq -r 'if .type == "bsp" then "float" else "bsp" end')
+#alt - e : yabai -m space --layout (yabai -m query --spaces --space | \
+#          jq -r 'if .type == "bsp" then "float" else "bsp" end')
+alt - e : yabai -m window --toggle float
 
 # toggle specific window & locate it at screen center
 alt - t : yabai -m window --toggle float;\
@@ -240,7 +241,8 @@ alt - 9 : yabai -m space --focus 9
 
 # open terminal
 alt - return : /Applications/kitty.app/Contents/MacOS/kitty --single-instance -d ~
-cmd - return : /Applications/Firefox.app/Contents/MacOS/firefox
+#cmd - return : /Applications/Brave\ Browser.app/Contents/MacOS/Brave\ Browser
+cmd - return : /Applications/FireFox.app/Contents/MacOS/firefox
 
 # restart
 alt + shift - r : brew services restart yabai

@@ -56,7 +56,7 @@ end
 
 # Util 
 
-if command -q fzf
+if command -q fzf_key_bindings
 	fzf_key_bindings
 end
 	

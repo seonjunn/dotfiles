@@ -47,6 +47,11 @@ if command -q adb
 	abbr -a adsh	"adb shell"
 end
 
+if command -q python
+	abbr -a py	"python3"
+	abbr -a pip	"python3 -m pip"
+end
+
 if command -q exa
 	abbr -a l	"exa -l -s type"
 else

@@ -17,3 +17,10 @@ set hlsearch
 set incsearch
 set nowrapscan
 set ignorecase
+
+" tab to 2 spaces
+filetype plugin indent on
+set expandtab
+set tabstop=2
+set softtabstop=2
+set shiftwidth=2

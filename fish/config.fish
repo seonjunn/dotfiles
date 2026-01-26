@@ -45,6 +45,7 @@ if command -q adb
 	abbr -a adp	"adb pair"
 	abbr -a adc	"adb connect"
 	abbr -a adsh	"adb shell"
+	export ANDROID_ADB_SERVER_PORT=5307
 end
 
 if command -q python

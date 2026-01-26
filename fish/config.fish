@@ -52,8 +52,8 @@ if command -q python
 	abbr -a pip	"python3 -m pip"
 end
 
-if command -q exa
-	abbr -a l	"exa -l -s type"
+if command -q eza
+	abbr -a l	"eza -l -s type"
 else
 	abbr -a l	"ls -l"
 end

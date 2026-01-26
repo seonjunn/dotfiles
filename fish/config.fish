@@ -26,7 +26,7 @@ abbr -a vfish	"vim $HOME/.config/fish/config.fish"
 if command -q git
 	abbr -a ga	"git add"
 	abbr -a gb	"git branch"
-	abbr -a gcm	"git commit"
+	abbr -a gcm	"git commit -m"
 	abbr -a gps	"git push"
 	abbr -a gpl	"git pull"
 	abbr -a gco	"git checkout"

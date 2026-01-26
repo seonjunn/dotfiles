@@ -8,16 +8,25 @@ apt-get update
 apt-get install -y --no-install-recommends \
   ca-certificates \
   curl \
+  gnupg \
+  software-properties-common
+
+add-apt-repository -y ppa:git-core/ppa
+apt-get update
+
+apt-get install -y --no-install-recommends \
   git \
   fish \
   vim \
   fzf \
   ripgrep
+
 rm -rf /var/lib/apt/lists/*
 
 # Git global config
 git config --global user.email "cyanide17@snu.ac.kr"
 git config --global user.name "Seonjun Kim"
+git config --global push.autoSetupRemote true
 
 # Dotfiles
 mkdir -p "$HOME/.config/fish"

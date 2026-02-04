@@ -6,6 +6,7 @@ fish_vi_key_bindings
 
 # Path
 
+export PATH="$HOME/.local/bin:$PATH"
 if test -d $HOME/.cargo
 	export PATH="$HOME/.cargo/bin:$PATH"
 end

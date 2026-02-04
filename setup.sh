@@ -41,3 +41,6 @@ curl -sSf https://sh.rustup.rs | sh -s -- -y
 cargo install zoxide --locked
 cargo install eza
 
+
+# Claude code
+curl -fsSL https://claude.ai/install.sh | bash

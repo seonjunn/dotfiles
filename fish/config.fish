@@ -87,9 +87,9 @@ end
 # Util
 
 # Dotfiles auto-update
-if status is-login
+if status is-login; and status is-interactive
 	dotpl &>/dev/null &
-	disown
+	disown 2>/dev/null
 	if test -f ~/.dotfiles/.setup-needed
 		echo "dotfiles: setup.sh changed — run ~/.dotfiles/setup.sh"
 	end

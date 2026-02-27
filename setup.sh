@@ -26,6 +26,8 @@ done
 run() {
   if [ "$DRY_RUN" = true ]; then
     echo "  $*"
+  elif [ $# -eq 1 ]; then
+    eval "$1"
   else
     "$@"
   fi
@@ -61,17 +63,13 @@ else
 fi
 
 # Node.js (via nvm)
-if [ "$DRY_RUN" = true ]; then
-  echo "  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | PROFILE=/dev/null bash"
-  echo "  nvm install --lts"
-  echo "  nvm alias default lts/*"
-else
-  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | PROFILE=/dev/null bash
+run "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | PROFILE=/dev/null bash"
+if [ "$DRY_RUN" = false ]; then
   export NVM_DIR="$HOME/.nvm"
   [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-  nvm install --lts
-  nvm alias default lts/*
 fi
+run nvm install --lts
+run nvm alias default lts/*
 
 # Git global config
 run git config --global user.email "cyanide17@snu.ac.kr"
@@ -91,11 +89,7 @@ run rm -rf "$HOME/.ipython/profile_default"
 run ln -sf "$HOME/.dotfiles/ipython/profile_default" "$HOME/.ipython/profile_default"
 
 # Claude
-if [ "$DRY_RUN" = true ]; then
-  echo "  curl -fsSL https://claude.ai/install.sh | bash"
-else
-  curl -fsSL https://claude.ai/install.sh | bash
-fi
+run "curl -fsSL https://claude.ai/install.sh | bash"
 run mkdir -p "$HOME/.claude"
 run ln -sf "$HOME/.dotfiles/agents/AGENTS.md"     "$HOME/.claude/CLAUDE.md"
 run ln -sf "$HOME/.dotfiles/claude/settings.json" "$HOME/.claude/settings.json"
@@ -115,13 +109,7 @@ run rm -rf "$HOME/.agents/skills"
 run ln -sf "$HOME/.dotfiles/agents/skills" "$HOME/.agents/skills"
 
 # Rust + cargo tools
-if [ "$DRY_RUN" = true ]; then
-  echo "  curl -sSf https://sh.rustup.rs | sh -s -- -y"
-  echo "  cargo install zoxide --locked"
-  echo "  cargo install eza"
-else
-  curl -sSf https://sh.rustup.rs | sh -s -- -y
-  . "$HOME/.cargo/env"
-  cargo install zoxide --locked
-  cargo install eza
-fi
+run "curl -sSf https://sh.rustup.rs | sh -s -- -y"
+[ "$DRY_RUN" = false ] && . "$HOME/.cargo/env"
+run cargo install zoxide --locked
+run cargo install eza

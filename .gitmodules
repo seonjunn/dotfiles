@@ -1,0 +1,3 @@
+[submodule "agents/skills/l4l"]
+	path = agents/skills/l4l
+	url = git@github.com:seonjunn/l4l.git

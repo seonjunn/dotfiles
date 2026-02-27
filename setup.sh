@@ -98,7 +98,7 @@ ok
 # Dotfiles
 section "Dotfiles"
 run rm -rf "$HOME/.dotfiles"
-run git clone --recurse-submodules https://github.com/seonjunn/dotfiles "$HOME/.dotfiles"
+run git clone --recurse-submodules git@github.com:seonjunn/dotfiles.git "$HOME/.dotfiles"
 run ln -sf "$HOME/.dotfiles/vim/.vimrc" "$HOME/.vimrc"
 run rm -rf "$HOME/.config/fish"
 run ln -sf "$HOME/.dotfiles/fish" "$HOME/.config/fish"

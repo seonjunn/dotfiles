@@ -136,6 +136,11 @@ run rm -rf "$HOME/.agents/skills"
 run ln -sf "$HOME/.dotfiles/agents/skills" "$HOME/.agents/skills"
 ok
 
+# Utilities
+section "Utilities"
+run npm install -g @kaitranntt/ccs
+ok
+
 # Rust + cargo tools
 section "Rust"
 run "curl -sSf https://sh.rustup.rs | sh -s -- -y"

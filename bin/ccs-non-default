@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-CFG="$HOME/.ccs/config.yaml"
-
-default="$(yq -r '.default' "$CFG")"
-
-yq -r '.accounts | keys[]' "$CFG" \
-  | grep -Fxv "$default"

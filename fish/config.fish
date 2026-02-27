@@ -55,7 +55,7 @@ end
 
 if command -q ccs
 	abbr -a cld	"ccs"
-	abbr -a clds	"ccs auth default (ccs-non-default)"
+	abbr -a clds	"ccs auth default (ccs-lru-account)"
 else if command -q claude
 	abbr -a cld	"claude"
 end

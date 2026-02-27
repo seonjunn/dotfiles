@@ -53,8 +53,7 @@ git config --global push.autoSetupRemote true
 
 # Dotfiles
 rm -rf "$HOME/.dotfiles"
-git clone https://github.com/seonjunn/dotfiles "$HOME/.dotfiles"
-git -C "$HOME/.dotfiles" submodule update --init --recursive
+git clone --recurse-submodules https://github.com/seonjunn/dotfiles "$HOME/.dotfiles"
 ln -sf "$HOME/.dotfiles/vim/.vimrc" "$HOME/.vimrc"
 rm -rf "$HOME/.config/fish" && ln -sf "$HOME/.dotfiles/fish" "$HOME/.config/fish"
 

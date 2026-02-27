@@ -7,6 +7,7 @@ fish_vi_key_bindings
 # Path
 
 export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/bin:$PATH"
 if test -d $HOME/.cargo
 	export PATH="$HOME/.cargo/bin:$PATH"
 end
@@ -35,6 +36,7 @@ if command -q git
 	abbr -a gl	"git log --branches --graph --decorate --oneline"
 	abbr -a gst	"git status"
 	abbr -a gcl	"git clone"
+	abbr -a dotpl	"git -C $HOME/.dotfiles pull"
 end
 
 if command -q docker

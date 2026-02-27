@@ -35,6 +35,7 @@ alias mkdir	"mkdir -vp"
 
 # Abbreviation
 
+abbr -a dotsetup	"$HOME/.dotfiles/setup.sh"
 abbr -a sfish	"source $HOME/.config/fish/config.fish"
 abbr -a vfish	"vim $HOME/.config/fish/config.fish"
 abbr -a sai   "sudo apt install"

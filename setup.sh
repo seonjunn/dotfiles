@@ -54,6 +54,7 @@ git config --global push.autoSetupRemote true
 # Dotfiles
 rm -rf "$HOME/.dotfiles"
 git clone https://github.com/seonjunn/dotfiles "$HOME/.dotfiles"
+git -C "$HOME/.dotfiles" submodule update --init --recursive
 ln -sf "$HOME/.dotfiles/vim/.vimrc" "$HOME/.vimrc"
 rm -rf "$HOME/.config/fish" && ln -sf "$HOME/.dotfiles/fish" "$HOME/.config/fish"
 
@@ -69,6 +70,7 @@ ln -sf "$HOME/.dotfiles/claude/settings.json" "$HOME/.claude/settings.json"
 rm -rf "$HOME/.claude/commands" && ln -sf "$HOME/.dotfiles/claude/commands" "$HOME/.claude/commands"
 rm -rf "$HOME/.claude/skills"   && ln -sf "$HOME/.dotfiles/agents/skills"   "$HOME/.claude/skills"
 rm -rf "$HOME/.claude/agents"   && ln -sf "$HOME/.dotfiles/claude/agents"   "$HOME/.claude/agents"
+bash "$HOME/.dotfiles/agents/skills/l4l/install.sh"
 
 # Codex
 npm i -g @openai/codex

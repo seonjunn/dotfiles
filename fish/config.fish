@@ -90,6 +90,7 @@ end
 if status is-interactive; and set -q SSH_CONNECTION
 	echo (date '+%F %T') "ssh+interactive: invoking dotpl" >> ~/.dotfiles/.dotpl.log
 	fish -c dotpl > /dev/null 2>&1 &
+	disown $last_pid
 	if test -f ~/.dotfiles/.setup-needed
 		echo "dotfiles: setup.sh changed — run dotsetup (or ~/.dotfiles/setup.sh)"
 	end

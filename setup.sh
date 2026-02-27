@@ -22,11 +22,13 @@ $SUDO apt-get install -y --no-install-recommends \
   fish \
   vim \
   fzf \
-  ripgrep \
-  nodejs \
-  npm
+  ripgrep
 
 $SUDO rm -rf /var/lib/apt/lists/*
+
+# Node.js (via NodeSource to avoid apt conflicts)
+curl -fsSL https://deb.nodesource.com/setup_lts.x | $SUDO -E bash -
+$SUDO apt-get install -y --no-install-recommends nodejs
 
 # Git global config
 git config --global user.email "cyanide17@snu.ac.kr"

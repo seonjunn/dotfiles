@@ -13,11 +13,11 @@ Personal dotfiles for seonjunkim. Managed as a bare-style repo at `~/.dotfiles`,
 | `agents/` | Shared agent prompt (`AGENTS.md`) and skills |
 | `ipython/` | IPython profile |
 | `setup.sh` | Full bootstrap: installs packages, clones repo, creates symlinks |
-| `init.sh` | Pre-bootstrap root setup: passwordless sudo + home directory creation |
+| `bin/add-sudoer` | Pre-bootstrap root setup: grants passwordless sudo + creates home directories |
 
 ## Bootstrap order
 
-1. Run `init.sh` as root (once, on a fresh machine)
+1. Run `bin/add-sudoer` as root (once, on a fresh machine)
 2. Run `setup.sh` as the target user
 
 ## Symlinks created by setup.sh

@@ -41,14 +41,10 @@ rm -rf "$HOME/.config/fish" && ln -sf "$HOME/.dotfiles/fish" "$HOME/.config/fish
 mkdir -p "$HOME/.ipython"
 rm -rf "$HOME/.ipython/profile_default" && ln -sf "$HOME/.dotfiles/ipython/profile_default" "$HOME/.ipython/profile_default"
 
-# Shared agent config (Claude Code + Codex)
-mkdir -p "$HOME/.agents"
-rm -rf "$HOME/.agents/skills" && ln -sf "$HOME/.dotfiles/agents/skills" "$HOME/.agents/skills"
-
 # Claude
 curl -fsSL https://claude.ai/install.sh | bash
 mkdir -p "$HOME/.claude"
-ln -sf "$HOME/.dotfiles/agents/AGENTS.md"    "$HOME/.claude/CLAUDE.md"
+ln -sf "$HOME/.dotfiles/agents/AGENTS.md"     "$HOME/.claude/CLAUDE.md"
 ln -sf "$HOME/.dotfiles/claude/settings.json" "$HOME/.claude/settings.json"
 rm -rf "$HOME/.claude/commands" && ln -sf "$HOME/.dotfiles/claude/commands" "$HOME/.claude/commands"
 rm -rf "$HOME/.claude/skills"   && ln -sf "$HOME/.dotfiles/agents/skills"   "$HOME/.claude/skills"
@@ -56,8 +52,9 @@ rm -rf "$HOME/.claude/agents"   && ln -sf "$HOME/.dotfiles/claude/agents"   "$HO
 
 # Codex
 npm i -g @openai/codex
-mkdir -p "$HOME/.codex"
+mkdir -p "$HOME/.codex" "$HOME/.agents"
 ln -sf "$HOME/.dotfiles/agents/AGENTS.md" "$HOME/.codex/AGENTS.md"
+rm -rf "$HOME/.agents/skills" && ln -sf "$HOME/.dotfiles/agents/skills" "$HOME/.agents/skills"
 
 # Rust + cargo tools
 curl -sSf https://sh.rustup.rs | sh -s -- -y

@@ -3,18 +3,21 @@ set -euo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
 
+SUDO=""
+[ "$(id -u)" -ne 0 ] && SUDO="sudo"
+
 # System packages
-sudo apt-get update
-sudo apt-get install -y --no-install-recommends \
+$SUDO apt-get update
+$SUDO apt-get install -y --no-install-recommends \
   ca-certificates \
   curl \
   gnupg \
   software-properties-common
 
-sudo add-apt-repository -y ppa:git-core/ppa
-sudo apt-get update
+$SUDO add-apt-repository -y ppa:git-core/ppa
+$SUDO apt-get update
 
-sudo apt-get install -y --no-install-recommends \
+$SUDO apt-get install -y --no-install-recommends \
   git \
   fish \
   vim \
@@ -23,8 +26,7 @@ sudo apt-get install -y --no-install-recommends \
   nodejs \
   npm
 
-
-sudo rm -rf /var/lib/apt/lists/*
+$SUDO rm -rf /var/lib/apt/lists/*
 
 # Git global config
 git config --global user.email "cyanide17@snu.ac.kr"

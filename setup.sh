@@ -19,7 +19,10 @@ sudo apt-get install -y --no-install-recommends \
   fish \
   vim \
   fzf \
-  ripgrep
+  ripgrep \
+  nodejs \
+  npm
+
 
 sudo rm -rf /var/lib/apt/lists/*
 
@@ -33,6 +36,18 @@ rm -rf "$HOME/.dotfiles"
 git clone https://github.com/seonjunn/dotfiles "$HOME/.dotfiles"
 ln -sf "$HOME/.dotfiles/vim/.vimrc" "$HOME/.vimrc"
 rm -rf "$HOME/.config/fish" && ln -sf "$HOME/.dotfiles/fish" "$HOME/.config/fish"
+
+# Claude
+curl -fsSL https://claude.ai/install.sh | bash
+mkdir -p "$HOME/.claude"
+ln -sf "$HOME/.dotfiles/claude/CLAUDE.md"   "$HOME/.claude/CLAUDE.md"
+ln -sf "$HOME/.dotfiles/claude/settings.json" "$HOME/.claude/settings.json"
+rm -rf "$HOME/.claude/commands" && ln -sf "$HOME/.dotfiles/claude/commands" "$HOME/.claude/commands"
+rm -rf "$HOME/.claude/skills"   && ln -sf "$HOME/.dotfiles/claude/skills"   "$HOME/.claude/skills"
+rm -rf "$HOME/.claude/agents"   && ln -sf "$HOME/.dotfiles/claude/agents"   "$HOME/.claude/agents"
+
+# Codex
+npm i -g @openai/codex
 
 # Rust + cargo tools
 curl -sSf https://sh.rustup.rs | sh -s -- -y

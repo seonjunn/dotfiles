@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CFG="$HOME/.ccs/config.yaml"
+
+yq -r '.accounts | to_entries[] | [.value.last_used, .key] | @tsv' "$CFG" \
+  | sort \
+  | head -1 \
+  | cut -f2

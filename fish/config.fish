@@ -87,15 +87,13 @@ end
 # Util
 
 # Dotfiles auto-update
-if status is-login; and status is-interactive
-	echo (date '+%F %T') "login+interactive: invoking dotpl" >> ~/.dotfiles/.dotpl.log
+if status is-interactive; and set -q SSH_CONNECTION
+	echo (date '+%F %T') "ssh+interactive: invoking dotpl" >> ~/.dotfiles/.dotpl.log
 	dotpl &>/dev/null &
 	disown 2>/dev/null
 	if test -f ~/.dotfiles/.setup-needed
 		echo "dotfiles: setup.sh changed — run dotsetup (or ~/.dotfiles/setup.sh)"
 	end
-else if status is-login
-	echo (date '+%F %T') "login but not interactive: skipped" >> ~/.dotfiles/.dotpl.log
 end
 
 if type -q fzf_key_bindings

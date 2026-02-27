@@ -89,8 +89,7 @@ end
 # Dotfiles auto-update
 if status is-interactive; and set -q SSH_CONNECTION
 	echo (date '+%F %T') "ssh+interactive: invoking dotpl" >> ~/.dotfiles/.dotpl.log
-	dotpl &>/dev/null &
-	disown 2>/dev/null
+	fish -c dotpl > /dev/null 2>&1 &
 	if test -f ~/.dotfiles/.setup-needed
 		echo "dotfiles: setup.sh changed — run dotsetup (or ~/.dotfiles/setup.sh)"
 	end

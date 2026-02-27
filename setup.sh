@@ -3,10 +3,22 @@ set -euo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
 
+SKIP_SUDO=false
+for arg in "$@"; do
+  case $arg in
+    --no-sudo) SKIP_SUDO=true ;;
+  esac
+done
+
 SUDO=""
-[ "$(id -u)" -ne 0 ] && SUDO="sudo"
+if [ "$SKIP_SUDO" = false ]; then
+  [ "$(id -u)" -ne 0 ] && SUDO="sudo"
+fi
 
 # System packages
+if [ "$SKIP_SUDO" = true ]; then
+  echo "Skipping system package installation (--no-sudo)"
+else
 $SUDO apt-get update
 $SUDO apt-get install -y --no-install-recommends \
   ca-certificates \
@@ -25,6 +37,7 @@ $SUDO apt-get install -y --no-install-recommends \
   ripgrep
 
 $SUDO rm -rf /var/lib/apt/lists/*
+fi
 
 # Node.js (via nvm)
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | PROFILE=/dev/null bash

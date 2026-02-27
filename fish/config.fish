@@ -11,6 +11,16 @@ set -gx PATH $HOME/bin $PATH
 if test -d $HOME/.cargo
 	set -gx PATH $HOME/.cargo/bin $PATH
 end
+if test -d $HOME/.nvm
+	set -gx NVM_DIR $HOME/.nvm
+	set -l _ver (string trim (cat "$NVM_DIR/alias/default" 2>/dev/null))
+	while test -f "$NVM_DIR/alias/$_ver"
+		set _ver (string trim (cat "$NVM_DIR/alias/$_ver"))
+	end
+	if test -d "$NVM_DIR/versions/node/$_ver"
+		set -gx PATH "$NVM_DIR/versions/node/$_ver/bin" $PATH
+	end
+end
 set -gx EDITOR vim
 set -gx TERM xterm-256color
 

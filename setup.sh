@@ -26,9 +26,12 @@ $SUDO apt-get install -y --no-install-recommends \
 
 $SUDO rm -rf /var/lib/apt/lists/*
 
-# Node.js (via NodeSource to avoid apt conflicts)
-curl -fsSL https://deb.nodesource.com/setup_lts.x | $SUDO -E bash -
-$SUDO apt-get install -y --no-install-recommends nodejs
+# Node.js (via nvm)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | PROFILE=/dev/null bash
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+nvm install --lts
+nvm alias default lts/*
 
 # Git global config
 git config --global user.email "cyanide17@snu.ac.kr"

@@ -7,6 +7,16 @@ SKIP_SUDO=false
 for arg in "$@"; do
   case $arg in
     --no-sudo) SKIP_SUDO=true ;;
+    --help|-h)
+      echo "Usage: setup.sh [OPTIONS]"
+      echo ""
+      echo "Bootstrap a new machine with dotfiles and tools."
+      echo ""
+      echo "Options:"
+      echo "  --no-sudo   Skip system package installation (apt-get)"
+      echo "  --help, -h  Show this help message"
+      exit 0
+      ;;
   esac
 done
 

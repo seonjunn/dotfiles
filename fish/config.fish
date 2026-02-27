@@ -4,15 +4,17 @@ set fish_greeting
 fish_vi_key_bindings
 
 
-# Path
+# Core Environment
 
-export PATH="$HOME/.local/bin:$PATH"
-export PATH="$HOME/bin:$PATH"
+set -gx PATH $HOME/.local/bin $PATH
+set -gx PATH $HOME/bin $PATH
 if test -d $HOME/.cargo
-	export PATH="$HOME/.cargo/bin:$PATH"
+	set -gx PATH $HOME/.cargo/bin $PATH
 end
+set -gx EDITOR vim
+set -gx TERM xterm-256color
 
-# Alias 
+# Alias
 
 alias mv	"mv -iv"
 alias cp	"cp -riv"
@@ -48,10 +50,10 @@ if command -q adb
 	abbr -a adp	"adb pair"
 	abbr -a adc	"adb connect"
 	abbr -a adsh	"adb shell"
-	export ANDROID_ADB_SERVER_PORT=5307
+	set -gx ANDROID_ADB_SERVER_PORT 5307
 end
 
-if command -q python
+if command -q python3
 	abbr -a py	"python3"
 	abbr -a pip	"python3 -m pip"
 end
@@ -63,12 +65,11 @@ else
 end
 
 
-# Util 
+# Util
 
 if type -q fzf_key_bindings
 	fzf_key_bindings
 end
-	
 
 if command -q zoxide
 	zoxide init fish | source

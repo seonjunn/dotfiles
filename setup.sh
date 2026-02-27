@@ -160,5 +160,7 @@ run cargo install zoxide --locked
 run cargo install eza
 ok
 
+run rm -f "$HOME/.dotfiles/.setup-needed"
+
 echo ""
 echo "Done. All stages completed successfully."

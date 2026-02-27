@@ -50,7 +50,6 @@ if command -q git
 	abbr -a gl	"git log --branches --graph --decorate --oneline"
 	abbr -a gst	"git status"
 	abbr -a gcl	"git clone"
-	abbr -a dotpl	"git -C $HOME/.dotfiles pull"
 end
 
 if command -q ccs
@@ -85,6 +84,15 @@ end
 
 
 # Util
+
+# Dotfiles auto-update
+if status is-login
+	dotpl &>/dev/null &
+	disown
+	if test -f ~/.dotfiles/.setup-needed
+		echo "dotfiles: setup.sh changed — run ~/.dotfiles/setup.sh"
+	end
+end
 
 if type -q fzf_key_bindings
 	fzf_key_bindings

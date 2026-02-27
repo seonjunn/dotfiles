@@ -8,7 +8,7 @@ function dotpl
 	end
 	if git -C $repo diff --name-only $before HEAD | string match -q 'setup.sh'
 		touch $repo/.setup-needed
-		echo "setup.sh changed — re-run ~/.dotfiles/setup.sh"
+		echo "setup.sh changed — re-run dotsetup (or ~/.dotfiles/setup.sh)"
 		echo (date '+%F %T') "setup.sh changed, flag set" >> $log
 	else
 		echo (date '+%F %T') "ok" >> $log

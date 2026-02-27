@@ -92,7 +92,7 @@ if status is-login; and status is-interactive
 	dotpl &>/dev/null &
 	disown 2>/dev/null
 	if test -f ~/.dotfiles/.setup-needed
-		echo "dotfiles: setup.sh changed — run ~/.dotfiles/setup.sh"
+		echo "dotfiles: setup.sh changed — run dotsetup (or ~/.dotfiles/setup.sh)"
 	end
 else if status is-login
 	echo (date '+%F %T') "login but not interactive: skipped" >> ~/.dotfiles/.dotpl.log

@@ -25,7 +25,11 @@ done
 
 run() {
   if [ "$DRY_RUN" = true ]; then
-    echo "  $*"
+    if [ $# -eq 1 ]; then
+      echo "  $1"
+    else
+      printf ' '; printf ' %q' "$@"; printf '\n'
+    fi
   elif [ $# -eq 1 ]; then
     eval "$1"
   else
@@ -59,7 +63,7 @@ else
     fzf \
     ripgrep
 
-  run $SUDO rm -rf /var/lib/apt/lists/*
+  run $SUDO rm -rf '/var/lib/apt/lists/*'
 fi
 
 # Node.js (via nvm)

@@ -77,6 +77,17 @@ else
   ok
 fi
 
+# yq
+if [ "$SKIP_SUDO" = true ]; then
+  echo "[skip] yq (--no-sudo)"
+else
+  section "yq"
+  run $SUDO curl -fsSL "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64" \
+    -o /usr/local/bin/yq
+  run $SUDO chmod +x /usr/local/bin/yq
+  ok
+fi
+
 # Node.js (via nvm)
 section "Node.js"
 run "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | PROFILE=/dev/null bash"

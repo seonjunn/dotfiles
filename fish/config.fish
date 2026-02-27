@@ -6,6 +6,7 @@ fish_vi_key_bindings
 
 # Core Environment
 
+set -gx PATH $HOME/.dotfiles/bin $PATH
 set -gx PATH $HOME/.local/bin $PATH
 set -gx PATH $HOME/bin $PATH
 if test -d $HOME/.cargo
@@ -36,6 +37,7 @@ alias mkdir	"mkdir -vp"
 
 abbr -a sfish	"source $HOME/.config/fish/config.fish"
 abbr -a vfish	"vim $HOME/.config/fish/config.fish"
+abbr -a sai   "sudo apt install"
 
 if command -q git
 	abbr -a ga	"git add"
@@ -49,6 +51,13 @@ if command -q git
 	abbr -a gst	"git status"
 	abbr -a gcl	"git clone"
 	abbr -a dotpl	"git -C $HOME/.dotfiles pull"
+end
+
+if command -q ccs
+	abbr -a cld	"ccs"
+	abbr -a clds	"ccs auth default (ccs-non-default)"
+else if command -q claude
+	abbr -a cld	"claude"
 end
 
 if command -q docker

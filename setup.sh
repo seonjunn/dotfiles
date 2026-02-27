@@ -37,6 +37,10 @@ git clone https://github.com/seonjunn/dotfiles "$HOME/.dotfiles"
 ln -sf "$HOME/.dotfiles/vim/.vimrc" "$HOME/.vimrc"
 rm -rf "$HOME/.config/fish" && ln -sf "$HOME/.dotfiles/fish" "$HOME/.config/fish"
 
+# IPython
+mkdir -p "$HOME/.ipython"
+rm -rf "$HOME/.ipython/profile_default" && ln -sf "$HOME/.dotfiles/ipython/profile_default" "$HOME/.ipython/profile_default"
+
 # Claude
 curl -fsSL https://claude.ai/install.sh | bash
 mkdir -p "$HOME/.claude"

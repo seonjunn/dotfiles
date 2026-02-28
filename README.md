@@ -9,7 +9,14 @@ curl -fsSL https://raw.githubusercontent.com/seonjunn/dotfiles/master/setup.sh |
 
 if you can't be a sudoer:
 ```sh
-curl -fsSL https://raw.githubusercontent.com/seonjunn/dotfiles/master/setup.sh | bash --no-sudo
+curl -fsSL https://raw.githubusercontent.com/seonjunn/dotfiles/master/setup.sh | bash
+```
+
+to run only specific modules (prefix-matched):
+```sh
+bash setup.sh dot cl        # dotfiles + claude
+bash setup.sh --list        # show available modules
+bash setup.sh --dry-run     # print commands without running
 ```
 
 ## useful stuff

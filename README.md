@@ -2,15 +2,9 @@ dotfiles go brrr
 
 ## starting fresh (again)
 
-if you aren't a sudoer yet:
+if you can be a sudoer:
 ```sh
-# as root
-curl -fsSL https://raw.githubusercontent.com/seonjunn/dotfiles/master/bin/add-sudoer | bash
-```
-
-if you are a sudoer:
-```sh
-curl -fsSL https://raw.githubusercontent.com/seonjunn/dotfiles/master/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/seonjunn/dotfiles/master/setup.sh | sudo bash
 ```
 
 if you can't be a sudoer:

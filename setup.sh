@@ -3,21 +3,19 @@ set -euo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
 
-SKIP_SUDO=false
 DRY_RUN=false
 VERBOSE=false
 for arg in "$@"; do
   case $arg in
-    --no-sudo)  SKIP_SUDO=true ;;
     --dry-run)  DRY_RUN=true ;;
     --verbose)  VERBOSE=true ;;
     --help|-h)
       echo "Usage: setup.sh [OPTIONS]"
       echo ""
       echo "Bootstrap a new machine with dotfiles and tools."
+      echo "Run via 'sudo bash' to also install system packages and grant passwordless sudo."
       echo ""
       echo "Options:"
-      echo "  --no-sudo   Skip system package installation (apt-get)"
       echo "  --dry-run   Print commands without executing them"
       echo "  --verbose   Show command output"
       echo "  --help, -h  Show this help message"
@@ -58,54 +56,58 @@ skip() {
   SECTION=""
 }
 
-SUDO=""
-if [ "$SKIP_SUDO" = false ]; then
-  if [ "$(id -u)" -eq 0 ]; then
-    : # running as root, no sudo needed
-  elif sudo -n true &>/dev/null; then
-    SUDO="sudo"
+HAS_SUDO=false
+[ -n "${SUDO_USER:-}" ] && HAS_SUDO=true
+
+# Sudoer
+if [ "$HAS_SUDO" = true ] && [ "$(id -u)" -eq 0 ]; then
+  SUDOERS_FILE="/etc/sudoers.d/${SUDO_USER}"
+  if [ -f "$SUDOERS_FILE" ]; then
+    skip "Sudoer"
   else
-    echo "error: sudo privileges required."
-    echo "Run 'add-sudoer' as root first, or use --no-sudo to skip system package installation."
-    exit 1
+    section "Sudoer"
+    run "echo '${SUDO_USER} ALL=(ALL) NOPASSWD: ALL' > ${SUDOERS_FILE}"
+    run chmod 0440 "$SUDOERS_FILE"
+    run visudo -cf "$SUDOERS_FILE"
+    ok
   fi
 fi
 
 # System packages
-if [ "$SKIP_SUDO" = true ]; then
-  skip "System packages (--no-sudo)"
+if [ "$HAS_SUDO" = false ]; then
+  skip "System packages"
 elif command -v git &>/dev/null && command -v fish &>/dev/null && command -v fzf &>/dev/null && command -v rg &>/dev/null; then
   skip "System packages"
 else
   section "System packages"
-  run $SUDO apt-get update -q
-  run $SUDO apt-get install -y -q --no-install-recommends \
+  run apt-get update -q
+  run apt-get install -y -q --no-install-recommends \
     ca-certificates \
     curl \
     gnupg \
     software-properties-common
-  run $SUDO add-apt-repository -y ppa:git-core/ppa
-  run $SUDO apt-get update -q
-  run $SUDO apt-get install -y -q --no-install-recommends \
+  run add-apt-repository -y ppa:git-core/ppa
+  run apt-get update -q
+  run apt-get install -y -q --no-install-recommends \
     git \
     fish \
     vim \
     fzf \
     ripgrep
-  run $SUDO rm -rf '/var/lib/apt/lists/*'
+  run rm -rf '/var/lib/apt/lists/*'
   ok
 fi
 
 # yq
-if [ "$SKIP_SUDO" = true ]; then
-  skip "yq (--no-sudo)"
+if [ "$HAS_SUDO" = false ]; then
+  skip "yq"
 elif command -v yq &>/dev/null; then
   skip "yq"
 else
   section "yq"
-  run $SUDO curl -fsSL "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64" \
+  run curl -fsSL "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64" \
     -o /usr/local/bin/yq
-  run $SUDO chmod +x /usr/local/bin/yq
+  run chmod +x /usr/local/bin/yq
   ok
 fi
 

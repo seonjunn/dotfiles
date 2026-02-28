@@ -12,12 +12,11 @@ Personal dotfiles for seonjunkim. Managed as a bare-style repo at `~/.dotfiles`,
 | `claude/` | Claude Code settings, commands, agents |
 | `agents/` | Shared agent prompt (`AGENTS.md`) and skills |
 | `ipython/` | IPython profile |
-| `setup.sh` | Full bootstrap: installs packages, clones repo, creates symlinks |
-| `bin/add-sudoer` | Pre-bootstrap root setup: grants passwordless sudo + creates home directories |
+| `setup.sh` | Full bootstrap: installs packages, clones repo, creates symlinks; grants passwordless sudo when run via `sudo bash` |
 
 ## Bootstrap order
 
-1. Run `bin/add-sudoer` as root (once, on a fresh machine)
+1. Run `setup.sh` via `sudo bash` (once, on a fresh machine, to grant passwordless sudo)
 2. Run `setup.sh` as the target user
 
 ## Symlinks created by setup.sh

@@ -47,26 +47,5 @@
       "Bash(docker ps *)",
       "Bash(docker images *)"
     ]
-  },
-  "mcpServers": {
-    "sequential-thinking": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
-    },
-    "arxiv-mcp-server": {
-      "command": "uv",
-      "args": ["tool", "run", "arxiv-mcp-server"]
-    },
-    "github": {
-      "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
-        "ghcr.io/github/github-mcp-server"
-      ],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
-      }
-    }
   }
 }

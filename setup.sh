@@ -28,7 +28,10 @@ for arg in "$@"; do
       echo "  --help, -h     Show this help message"
       echo ""
       echo "Modules (prefix-matched):"
-      echo "  sudoer packages yq node git dotfiles ipython claude codex ccs uv rust"
+      echo "  [system]   sudoer packages yq"
+      echo "  [runtime]  node uv rust"
+      echo "  [dotfiles] git dotfiles ipython"
+      echo "  [ai]       claude codex ccs"
       exit 0
       ;;
     -*) echo "unknown flag: $arg" >&2; exit 1 ;;
@@ -64,7 +67,7 @@ section() { SECTION="$1"; echo "[....] $1"; }
 ok()      { echo "[ ok ] $SECTION"; SECTION=""; }
 skip()    { echo "[skip] $1"; SECTION=""; }
 
-# ── Modules ──────────────────────────────────────────────────────────────────
+# ── System ───────────────────────────────────────────────────────────────────
 
 module_sudoer() {
   if [ "$HAS_SUDO" = true ] && [ "$(id -u)" -eq 0 ]; then
@@ -121,6 +124,8 @@ module_yq() {
   fi
 }
 
+# ── Runtimes ─────────────────────────────────────────────────────────────────
+
 module_node() {
   if [ -f "$HOME/.nvm/nvm.sh" ]; then
     skip "Node.js"
@@ -141,6 +146,40 @@ module_node() {
     . "$NVM_DIR/nvm.sh"
   fi
 }
+
+module_uv() {
+  if command -v uv &>/dev/null; then
+    skip "uv"
+  else
+    section "uv"
+    run "curl -LsSf https://astral.sh/uv/install.sh | sh"
+    [ "$DRY_RUN" = false ] && export PATH="$HOME/.local/bin:$PATH"
+    ok
+  fi
+  [ "$DRY_RUN" = false ] && [ -f "$HOME/.local/bin/uv" ] && export PATH="$HOME/.local/bin:$PATH"
+}
+
+module_rust() {
+  if [ -f "$HOME/.cargo/bin/rustup" ] && command -v zoxide &>/dev/null && command -v eza &>/dev/null; then
+    skip "Rust"
+  else
+    section "Rust"
+    if [ ! -f "$HOME/.cargo/bin/rustup" ]; then
+      run "curl -sSf https://sh.rustup.rs | sh -s -- -y"
+      [ "$DRY_RUN" = false ] && . "$HOME/.cargo/env"
+    fi
+    [ "$DRY_RUN" = false ] && [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+    if ! command -v zoxide &>/dev/null; then
+      run cargo install zoxide --locked
+    fi
+    if ! command -v eza &>/dev/null; then
+      run cargo install eza
+    fi
+    ok
+  fi
+}
+
+# ── Dotfiles ─────────────────────────────────────────────────────────────────
 
 module_git() {
   section "Git config"
@@ -169,6 +208,8 @@ module_ipython() {
   run ln -sf "$HOME/.dotfiles/ipython/profile_default" "$HOME/.ipython/profile_default"
   ok
 }
+
+# ── AI tools ─────────────────────────────────────────────────────────────────
 
 module_claude() {
   section "Claude"
@@ -211,41 +252,9 @@ module_ccs() {
   fi
 }
 
-module_uv() {
-  if command -v uv &>/dev/null; then
-    skip "uv"
-  else
-    section "uv"
-    run "curl -LsSf https://astral.sh/uv/install.sh | sh"
-    [ "$DRY_RUN" = false ] && export PATH="$HOME/.local/bin:$PATH"
-    ok
-  fi
-  [ "$DRY_RUN" = false ] && [ -f "$HOME/.local/bin/uv" ] && export PATH="$HOME/.local/bin:$PATH"
-}
-
-module_rust() {
-  if [ -f "$HOME/.cargo/bin/rustup" ] && command -v zoxide &>/dev/null && command -v eza &>/dev/null; then
-    skip "Rust"
-  else
-    section "Rust"
-    if [ ! -f "$HOME/.cargo/bin/rustup" ]; then
-      run "curl -sSf https://sh.rustup.rs | sh -s -- -y"
-      [ "$DRY_RUN" = false ] && . "$HOME/.cargo/env"
-    fi
-    [ "$DRY_RUN" = false ] && [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
-    if ! command -v zoxide &>/dev/null; then
-      run cargo install zoxide --locked
-    fi
-    if ! command -v eza &>/dev/null; then
-      run cargo install eza
-    fi
-    ok
-  fi
-}
-
 # ── Dispatch ─────────────────────────────────────────────────────────────────
 
-ALL_MODULES=(sudoer packages yq node git dotfiles ipython claude codex ccs uv rust)
+ALL_MODULES=(sudoer packages yq node uv rust git dotfiles ipython claude codex ccs)
 
 if [ "$LIST" = true ]; then
   printf '%s\n' "${ALL_MODULES[@]}"

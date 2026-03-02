@@ -4,6 +4,10 @@
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
     },
+    "arxiv-mcp-server": {
+      "command": "uv",
+      "args": ["tool", "run", "arxiv-mcp-server"]
+    },
     "github": {
       "command": "docker",
       "args": [

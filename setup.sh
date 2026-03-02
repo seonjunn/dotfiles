@@ -28,7 +28,7 @@ for arg in "$@"; do
       echo "  --help, -h     Show this help message"
       echo ""
       echo "Modules (prefix-matched):"
-      echo "  sudoer packages yq node git dotfiles ipython claude codex ccs rust"
+      echo "  sudoer packages yq node git dotfiles ipython claude codex ccs uv rust"
       exit 0
       ;;
     -*) echo "unknown flag: $arg" >&2; exit 1 ;;
@@ -185,6 +185,7 @@ module_claude() {
   run rm -rf "$HOME/.claude/agents"
   run ln -sf "$HOME/.dotfiles/claude/agents"   "$HOME/.claude/agents"
   run bash "$HOME/.dotfiles/agents/skills/l4l/install.sh"
+  run uv tool install arxiv-mcp-server
   ok
 }
 
@@ -210,6 +211,18 @@ module_ccs() {
   fi
 }
 
+module_uv() {
+  if command -v uv &>/dev/null; then
+    skip "uv"
+  else
+    section "uv"
+    run "curl -LsSf https://astral.sh/uv/install.sh | sh"
+    [ "$DRY_RUN" = false ] && export PATH="$HOME/.local/bin:$PATH"
+    ok
+  fi
+  [ "$DRY_RUN" = false ] && [ -f "$HOME/.local/bin/uv" ] && export PATH="$HOME/.local/bin:$PATH"
+}
+
 module_rust() {
   if [ -f "$HOME/.cargo/bin/rustup" ] && command -v zoxide &>/dev/null && command -v eza &>/dev/null; then
     skip "Rust"
@@ -232,7 +245,7 @@ module_rust() {
 
 # ── Dispatch ─────────────────────────────────────────────────────────────────
 
-ALL_MODULES=(sudoer packages yq node git dotfiles ipython claude codex ccs rust)
+ALL_MODULES=(sudoer packages yq node git dotfiles ipython claude codex ccs uv rust)
 
 if [ "$LIST" = true ]; then
   printf '%s\n' "${ALL_MODULES[@]}"

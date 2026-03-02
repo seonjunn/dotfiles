@@ -226,6 +226,7 @@ module_claude() {
   run rm -rf "$HOME/.claude/agents"
   run ln -sf "$HOME/.dotfiles/claude/agents"   "$HOME/.claude/agents"
   run bash "$HOME/.dotfiles/agents/skills/l4l/install.sh"
+  run bash "$HOME/.dotfiles/agents/skills/install-research.sh"
   run uv tool install arxiv-mcp-server
   ok
 }

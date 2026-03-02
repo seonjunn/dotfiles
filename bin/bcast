@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+	echo "Usage: bcast <file> [host...] [-f hosts_file]"
+	echo "  -f FILE  read hosts from file (whitespace-separated: spaces, tabs, newlines)"
+	exit 1
+}
+
+[[ $# -lt 1 ]] && usage
+
+src="$1"
+shift
+
+hosts=()
+hosts_file=""
+
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+		-f) hosts_file="$2"; shift 2 ;;
+		*)  hosts+=("$1"); shift ;;
+	esac
+done
+
+if [[ -n "$hosts_file" ]]; then
+	read -r -a file_hosts <<< "$(tr -s '[:space:]' ' ' < "$hosts_file")"
+	hosts+=("${file_hosts[@]}")
+fi
+
+[[ ${#hosts[@]} -eq 0 ]] && { echo "bcast: no hosts specified"; exit 1; }
+
+dest="${src##*/}"
+failed=0
+
+for host in "${hosts[@]}"; do
+	echo "-> $host"
+	if ! scp "$src" "$host:$dest"; then
+		echo "bcast: failed to copy to $host" >&2
+		failed=1
+	fi
+done
+
+exit $failed

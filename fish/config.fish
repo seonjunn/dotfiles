@@ -4,6 +4,13 @@ set fish_greeting
 fish_vi_key_bindings
 
 
+# Local Environment
+
+if test -f $HOME/.env
+	source $HOME/.env
+end
+
+
 # Core Environment
 
 set -gx PATH $HOME/.dotfiles/bin $PATH

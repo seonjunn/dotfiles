@@ -45,8 +45,12 @@ OS=$(uname -s)
 ARCH=$(uname -m)
 export OS ARCH
 
-# Ensure ~/.local/bin (zerobrew, uv, etc.) is always in PATH
+# Ensure ~/.local/bin (uv, zb, etc.) is always in PATH
 [ -d "$HOME/.local/bin" ] && export PATH="$HOME/.local/bin:$PATH"
+# Add zerobrew bins to PATH (ZEROBREW_PREFIX defaults to /opt/zerobrew/prefix)
+ZB_PREFIX="${ZEROBREW_PREFIX:-/opt/zerobrew/prefix}"
+[ -d "$HOME/.zerobrew/bin" ] && export PATH="$HOME/.zerobrew/bin:$PATH"
+[ -d "$ZB_PREFIX/bin" ]      && export PATH="$ZB_PREFIX/bin:$PATH"
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -100,6 +104,7 @@ module_packages() {
       run "curl -fsSL https://zerobrew.rs/install | bash"
       [ "$DRY_RUN" = false ] && export PATH="$HOME/.local/bin:$PATH"
     fi
+    run zb init
     run zb install git fish vim fzf ripgrep
     ok
   elif [ "$HAS_SUDO" = false ]; then

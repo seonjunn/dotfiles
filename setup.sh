@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-export DEBIAN_FRONTEND=noninteractive
+[ "$(uname -s)" = "Linux" ] && export DEBIAN_FRONTEND=noninteractive
 
 # ── CLI ──────────────────────────────────────────────────────────────────────
 
@@ -40,6 +40,10 @@ for arg in "$@"; do
 done
 
 export DRY_RUN VERBOSE
+
+OS=$(uname -s)
+ARCH=$(uname -m)
+export OS ARCH
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -85,9 +89,17 @@ module_sudoer() {
 }
 
 module_packages() {
-  if [ "$HAS_SUDO" = false ]; then
+  if command -v git &>/dev/null && command -v fish &>/dev/null && command -v fzf &>/dev/null && command -v rg &>/dev/null; then
     skip "System packages"
-  elif command -v git &>/dev/null && command -v fish &>/dev/null && command -v fzf &>/dev/null && command -v rg &>/dev/null; then
+  elif [ "$OS" = "Darwin" ]; then
+    section "System packages"
+    if ! command -v zb &>/dev/null; then
+      run "curl -fsSL https://zerobrew.rs/install | bash"
+      [ "$DRY_RUN" = false ] && export PATH="$HOME/.local/bin:$PATH"
+    fi
+    run zb install git fish vim fzf ripgrep
+    ok
+  elif [ "$HAS_SUDO" = false ]; then
     skip "System packages"
   else
     section "System packages"
@@ -111,13 +123,19 @@ module_packages() {
 }
 
 module_yq() {
-  if [ "$HAS_SUDO" = false ]; then
+  if command -v yq &>/dev/null; then
     skip "yq"
-  elif command -v yq &>/dev/null; then
+  elif [ "$OS" = "Darwin" ]; then
+    section "yq"
+    run zb install yq
+    ok
+  elif [ "$HAS_SUDO" = false ]; then
     skip "yq"
   else
     section "yq"
-    run curl -fsSL "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64" \
+    YQ_ARCH=amd64
+    [ "$ARCH" = aarch64 ] || [ "$ARCH" = arm64 ] && YQ_ARCH=arm64
+    run curl -fsSL "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${YQ_ARCH}" \
       -o /usr/local/bin/yq
     run chmod +x /usr/local/bin/yq
     ok

@@ -13,6 +13,7 @@ end
 
 # Core Environment
 
+set -l _os (uname)
 set -gx PATH $HOME/.dotfiles/bin $PATH
 set -gx PATH $HOME/.local/bin $PATH
 set -gx PATH $HOME/bin $PATH
@@ -27,6 +28,11 @@ if test -d $HOME/.nvm
 	end
 	if test -d "$NVM_DIR/versions/node/$_ver"
 		set -gx PATH "$NVM_DIR/versions/node/$_ver/bin" $PATH
+	end
+end
+if test $_os = Darwin
+	if test -d /opt/homebrew/bin
+		set -gx PATH /opt/homebrew/bin $PATH
 	end
 end
 set -gx EDITOR vim
@@ -45,7 +51,9 @@ alias mkdir	"mkdir -vp"
 abbr -a dotsetup	"$HOME/.dotfiles/setup.sh"
 abbr -a sfish	"source $HOME/.config/fish/config.fish"
 abbr -a vfish	"vim $HOME/.config/fish/config.fish"
-abbr -a sai   "sudo apt install"
+if test $_os != Darwin
+	abbr -a sai "sudo apt install"
+end
 
 if command -q git
 	abbr -a ga	"git add"
@@ -63,6 +71,9 @@ end
 if command -q ccs
 	abbr -a cld	"ccs"
 	abbr -a clds	"ccs auth default (ccs-lru-account)"
+  abbr -a cldr  "ccs --resume"
+  abbr -a cldd  "ccs --dangerously-skip-permissions"
+  abbr -a cldrd "ccs --resume --dangerously-skip-permissions"
 else if command -q claude
 	abbr -a cld	"claude"
 end

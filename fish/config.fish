@@ -32,11 +32,16 @@ if test -d $HOME/.nvm
 end
 if test $_os = Darwin
 	if test -d /opt/homebrew/bin
-		set -gx PATH /opt/homebrew/bin $PATH
+		fish_add_path /opt/homebrew/bin
+	end
+	if test -d /opt/zerobrew/prefix/bin
+		fish_add_path /opt/zerobrew/prefix/bin
 	end
 end
 set -gx EDITOR vim
 set -gx TERM xterm-256color
+set -Ux LANG en_US.UTF-8
+set -Ux LC_ALL en_US.UTF-8
 
 # Alias
 

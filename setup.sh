@@ -45,6 +45,9 @@ OS=$(uname -s)
 ARCH=$(uname -m)
 export OS ARCH
 
+# Ensure ~/.local/bin (zerobrew, uv, etc.) is always in PATH
+[ -d "$HOME/.local/bin" ] && export PATH="$HOME/.local/bin:$PATH"
+
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 HAS_SUDO=false
@@ -212,6 +215,8 @@ module_dotfiles() {
   if [ ! -d "$HOME/.dotfiles/.git" ]; then
     run git clone --recurse-submodules https://github.com/seonjunn/dotfiles "$HOME/.dotfiles"
     run git -C "$HOME/.dotfiles" remote set-url origin git@github.com:seonjunn/dotfiles.git
+  else
+    run git -C "$HOME/.dotfiles" submodule update --init --recursive
   fi
   run ln -sf "$HOME/.dotfiles/vim/.vimrc" "$HOME/.vimrc"
   run rm -rf "$HOME/.config/fish"

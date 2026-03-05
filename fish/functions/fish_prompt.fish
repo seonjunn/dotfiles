@@ -1,4 +1,5 @@
 function fish_prompt
+	set -l _last_status $status
 	set_color 999
 	echo -n "["(date "+%H:%M:%S")"] "
 	set_color white
@@ -15,6 +16,10 @@ function fish_prompt
 	end
 	set_color f8a
 	printf '%s ' (__fish_git_prompt)
+	if test $_last_status -ne 0
+		set_color red
+		echo -n "[$_last_status] "
+	end
 	set_color brcyan
 	echo -n '~>'
 	set_color -b normal

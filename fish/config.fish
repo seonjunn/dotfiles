@@ -118,8 +118,8 @@ if status is-interactive; and set -q SSH_CONNECTION
 	end
 end
 
-if type -q fzf_key_bindings
-	fzf_key_bindings
+if command -q fzf
+  fzf --fish | source
 end
 
 if command -q zoxide

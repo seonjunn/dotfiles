@@ -87,6 +87,12 @@ if command -q docker
 	abbr -a dk	"docker"
 end
 
+if command -q tmux
+	abbr -a tm	"tmux"
+	abbr -a tma	"tmux attach"
+	abbr -a tml	"tmux ls"
+end
+
 if command -q adb
 	abbr -a add	"adb devices"
 	abbr -a adp	"adb pair"

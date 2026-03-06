@@ -119,7 +119,12 @@ if status is-interactive; and set -q SSH_CONNECTION
 end
 
 if command -q fzf
-  fzf --fish | source
+  if fzf --fish >/dev/null 2>/dev/null
+    fzf --fish | source
+  else if functions -q fzf_key_bindings
+    # Older fzf releases expose fish integration via this function.
+    fzf_key_bindings
+  end
 end
 
 if command -q zoxide

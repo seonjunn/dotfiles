@@ -2,6 +2,13 @@
 
 Personal dotfiles for seonjunkim. Managed as a bare-style repo at `~/.dotfiles`, symlinked into place by `setup.sh`.
 
+## Platform support
+
+This repo targets both **macOS** and **Ubuntu**. Keep all configs and scripts platform-agnostic:
+- No hardcoded absolute paths (use `$HOME`, rely on `$PATH`)
+- No macOS-only or Linux-only tools without guarding with `uname` checks
+- `setup.sh` handles platform differences (e.g. `brew` vs `apt`) internally
+
 ## Structure
 
 | Path | Description |
@@ -31,3 +38,11 @@ Personal dotfiles for seonjunkim. Managed as a bare-style repo at `~/.dotfiles`,
 - `~/.claude/agents` → `~/.dotfiles/claude/agents`
 - `~/.codex/AGENTS.md` → `~/.dotfiles/agents/AGENTS.md`
 - `~/.agents/skills` → `~/.dotfiles/agents/skills`
+
+## MCP servers
+
+MCP servers are declared in `claude/settings.json` (tracked in this repo) using bare command names — no absolute paths — so they work cross-platform as long as the binary is in `$PATH`. `setup.sh` installs the required binaries via `uv tool install`.
+
+| Server | Command | Installed by |
+|---|---|---|
+| `arxiv` | `arxiv-mcp-server` | `uv tool install arxiv-mcp-server` |

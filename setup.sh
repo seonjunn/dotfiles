@@ -246,7 +246,7 @@ module_claude() {
     run "curl -fsSL https://claude.ai/install.sh | bash"
   fi
   run mkdir -p "$HOME/.claude"
-  run ln -sf "$HOME/.dotfiles/agents/AGENTS.md"     "$HOME/.claude/CLAUDE.md"
+  run ln -sf "$HOME/.dotfiles/claude/CLAUDE.md"     "$HOME/.claude/CLAUDE.md"
   run ln -sf "$HOME/.dotfiles/claude/settings.json" "$HOME/.claude/settings.json"
   run rm -rf "$HOME/.claude/commands"
   run ln -sf "$HOME/.dotfiles/claude/commands" "$HOME/.claude/commands"

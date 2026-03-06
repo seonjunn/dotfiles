@@ -226,6 +226,7 @@ module_dotfiles() {
   run ln -sf "$HOME/.dotfiles/vim/.vimrc" "$HOME/.vimrc"
   run rm -rf "$HOME/.config/fish"
   run ln -sf "$HOME/.dotfiles/fish" "$HOME/.config/fish"
+  run ln -sf "$HOME/.dotfiles/tmux/.tmux.conf" "$HOME/.tmux.conf"
   ok
 }
 

@@ -28,6 +28,7 @@ This repo targets both **macOS** and **Ubuntu**. Keep all configs and scripts pl
 
 ## Symlinks created by setup.sh
 
+- `~/.tmux.conf` → `~/.dotfiles/tmux/.tmux.conf`
 - `~/.vimrc` → `~/.dotfiles/vim/.vimrc`
 - `~/.config/fish` → `~/.dotfiles/fish`
 - `~/.ipython/profile_default` → `~/.dotfiles/ipython/profile_default`

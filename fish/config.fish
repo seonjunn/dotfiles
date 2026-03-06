@@ -87,6 +87,11 @@ if command -q docker
 	abbr -a dk	"docker"
 end
 
+if command -q codex
+	abbr -a cdx	"codex"
+	abbr -a cdxr	"codex resume"
+end
+
 if command -q tmux
 	abbr -a tm	"tmux"
 	abbr -a tma	"tmux attach"

@@ -2,6 +2,10 @@
 
 Personal dotfiles for seonjunkim. Managed as a bare-style repo at `~/.dotfiles`, symlinked into place by `setup.sh`.
 
+## Package manager preference
+
+Prefer **zerobrew** over Homebrew for installing packages. Only fall back to `brew` if zerobrew does not support the package or otherwise cannot be used.
+
 ## Platform support
 
 This repo targets both **macOS** and **Ubuntu**. Keep all configs and scripts platform-agnostic:

@@ -240,6 +240,16 @@ module_ipython() {
 
 # ── AI tools ─────────────────────────────────────────────────────────────────
 
+link_shared_skills() {
+  local target_dir="$1"
+  run rm -rf "$target_dir"
+  run ln -sf "$HOME/.dotfiles/agents/skills" "$target_dir"
+}
+
+install_shared_mcp_servers() {
+  run uv tool install arxiv-mcp-server
+}
+
 module_claude() {
   section "Claude"
   if ! command -v claude &>/dev/null && ! command -v ccs &>/dev/null; then
@@ -250,13 +260,12 @@ module_claude() {
   run ln -sf "$HOME/.dotfiles/claude/settings.json" "$HOME/.claude/settings.json"
   run rm -rf "$HOME/.claude/commands"
   run ln -sf "$HOME/.dotfiles/claude/commands" "$HOME/.claude/commands"
-  run rm -rf "$HOME/.claude/skills"
-  run ln -sf "$HOME/.dotfiles/agents/skills"   "$HOME/.claude/skills"
+  link_shared_skills "$HOME/.claude/skills"
   run rm -rf "$HOME/.claude/agents"
   run ln -sf "$HOME/.dotfiles/claude/agents"   "$HOME/.claude/agents"
   run bash "$HOME/.dotfiles/agents/skills/l4l/install.sh"
   run bash "$HOME/.dotfiles/agents/skills/install-research.sh"
-  run uv tool install arxiv-mcp-server
+  install_shared_mcp_servers
   ok
 }
 
@@ -267,8 +276,13 @@ module_codex() {
   fi
   run mkdir -p "$HOME/.codex" "$HOME/.agents"
   run ln -sf "$HOME/.dotfiles/agents/AGENTS.md" "$HOME/.codex/AGENTS.md"
-  run rm -rf "$HOME/.agents/skills"
-  run ln -sf "$HOME/.dotfiles/agents/skills" "$HOME/.agents/skills"
+  link_shared_skills "$HOME/.agents/skills"
+  install_shared_mcp_servers
+  if codex mcp --help >/dev/null 2>&1; then
+    if ! codex mcp get arxiv >/dev/null 2>&1; then
+      run codex mcp add arxiv -- arxiv-mcp-server
+    fi
+  fi
   ok
 }
 

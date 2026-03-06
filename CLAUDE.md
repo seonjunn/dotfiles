@@ -36,7 +36,7 @@ This repo targets both **macOS** and **Ubuntu**. Keep all configs and scripts pl
 - `~/.vimrc` → `~/.dotfiles/vim/.vimrc`
 - `~/.config/fish` → `~/.dotfiles/fish`
 - `~/.ipython/profile_default` → `~/.dotfiles/ipython/profile_default`
-- `~/.claude/CLAUDE.md` → `~/.dotfiles/agents/AGENTS.md`
+- `~/.claude/CLAUDE.md` → `~/.dotfiles/claude/CLAUDE.md`
 - `~/.claude/settings.json` → `~/.dotfiles/claude/settings.json`
 - `~/.claude/commands` → `~/.dotfiles/claude/commands`
 - `~/.claude/skills` → `~/.dotfiles/agents/skills`
@@ -46,7 +46,11 @@ This repo targets both **macOS** and **Ubuntu**. Keep all configs and scripts pl
 
 ## MCP servers
 
-MCP servers are declared in `claude/settings.json` (tracked in this repo) using bare command names — no absolute paths — so they work cross-platform as long as the binary is in `$PATH`. `setup.sh` installs the required binaries via `uv tool install`.
+Claude Code MCP servers are declared in `claude/settings.json` (tracked in this repo) using bare command names — no absolute paths — so they work cross-platform as long as the binary is in `$PATH`.
+
+Codex MCP servers are configured in `~/.codex/config.toml`. To avoid clobbering host-specific Codex settings (for example `projects.*.trust_level`), `setup.sh` manages Codex MCP entries via `codex mcp add` instead of symlinking a repo-managed `config.toml`.
+
+`setup.sh` installs required MCP server binaries via `uv tool install`.
 
 | Server | Command | Installed by |
 |---|---|---|

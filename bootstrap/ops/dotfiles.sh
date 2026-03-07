@@ -6,10 +6,8 @@ run_dotfiles() {
   if [ ! -d "$SETUP_DOTFILES_DIR/.git" ]; then
     run git clone https://github.com/seonjunn/dotfiles "$SETUP_DOTFILES_DIR"
     run git -C "$SETUP_DOTFILES_DIR" remote set-url origin git@github.com:seonjunn/dotfiles.git
-  else
-    run git -C "$SETUP_DOTFILES_DIR" pull --ff-only
+    run git -C "$SETUP_DOTFILES_DIR" submodule update --init --recursive
   fi
-  run git -C "$SETUP_DOTFILES_DIR" submodule update --init --recursive
   run git -C "$SETUP_DOTFILES_DIR" config core.hooksPath .githooks
 
   run ln -sf "$SETUP_DOTFILES_DIR/config/vim/.vimrc" "$SETUP_HOME/.vimrc"
@@ -33,6 +31,5 @@ declare -A OP_DOTFILES=(
   [run_fn]="run_dotfiles"
   [verify_fn]="verify_dotfiles"
   [desc]="Dotfiles"
-  [always_run]="true"
 )
 register_operation OP_DOTFILES

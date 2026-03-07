@@ -15,7 +15,7 @@ register_group() {
 
 register_operation() {
   local ref="$1"
-  local name category deps run_fn verify_fn desc always_run
+  local name category deps run_fn verify_fn desc
 
   eval "name=\${${ref}[name]}"
   eval "category=\${${ref}[category]}"
@@ -23,7 +23,6 @@ register_operation() {
   eval "run_fn=\${${ref}[run_fn]}"
   eval "verify_fn=\${${ref}[verify_fn]}"
   eval "desc=\${${ref}[desc]}"
-  eval "always_run=\${${ref}[always_run]:-false}"
 
   if [ -z "$name" ] || [ -z "$category" ] || [ -z "$run_fn" ] || [ -z "$verify_fn" ]; then
     echo "error: operation metadata is missing required fields in '$ref'" >&2
@@ -36,7 +35,6 @@ register_operation() {
   eval "SETUP_OP_RUN_${name}=\"${run_fn}\""
   eval "SETUP_OP_VERIFY_${name}=\"${verify_fn}\""
   eval "SETUP_OP_DESC_${name}=\"${desc}\""
-  eval "SETUP_OP_ALWAYS_RUN_${name}=\"${always_run}\""
 }
 
 op_exists() {
@@ -73,10 +71,6 @@ op_get_desc() {
   eval "printf '%s' \"\${SETUP_OP_DESC_${name}:-}\""
 }
 
-op_get_always_run() {
-  local name="$1"
-  eval "printf '%s' \"\${SETUP_OP_ALWAYS_RUN_${name}:-false}\""
-}
 
 resolve_prefix() {
   local prefix="$1"
@@ -169,19 +163,18 @@ resolve_execution_order() {
 
 execute_operation() {
   local op="$1"
-  local runner verify desc category always_run
+  local runner verify desc category
 
   runner="$(op_get_runner "$op")"
   verify="$(op_get_verify "$op")"
   desc="$(op_get_desc "$op")"
   category="$(op_get_category "$op")"
-  always_run="$(op_get_always_run "$op")"
 
   [ -z "$desc" ] && desc="$op"
   [ -z "$runner" ] && { echo "error: operation '$op' has no runner" >&2; return 1; }
   [ -z "$verify" ] && { echo "error: operation '$op' has no verify function" >&2; return 1; }
 
-  if [ "$always_run" != "true" ] && "$verify"; then
+  if "$verify"; then
     skip "$desc"
     return 0
   fi

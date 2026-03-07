@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 run_dotfiles() {
+  prune_stale_dotfile_symlinks
+
   if [ ! -d "$SETUP_DOTFILES_DIR/.git" ]; then
     run git clone --recurse-submodules https://github.com/seonjunn/dotfiles "$SETUP_DOTFILES_DIR"
     run git -C "$SETUP_DOTFILES_DIR" remote set-url origin git@github.com:seonjunn/dotfiles.git

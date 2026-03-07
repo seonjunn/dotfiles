@@ -91,6 +91,28 @@ has_all_commands() {
   return 0
 }
 
+prune_stale_dotfile_symlinks() {
+  local scan_dirs=(
+    "$SETUP_HOME"
+    "$SETUP_HOME/.config"
+    "$SETUP_HOME/.ipython"
+    "$SETUP_HOME/.claude"
+    "$SETUP_HOME/.codex"
+    "$SETUP_HOME/.agents"
+  )
+  local dir link target
+  for dir in "${scan_dirs[@]}"; do
+    [ -d "$dir" ] || continue
+    while IFS= read -r -d '' link; do
+      target="$(readlink "$link")"
+      if [[ "$target" == "$SETUP_DOTFILES_DIR"* ]] && [ ! -e "$target" ]; then
+        echo "[prune] Removing stale symlink: $link -> $target"
+        rm -f "$link"
+      fi
+    done < <(find "$dir" -maxdepth 1 -type l -print0 2>/dev/null)
+  done
+}
+
 link_shared_skills() {
   local target_dir="$1"
   run rm -rf "$target_dir"

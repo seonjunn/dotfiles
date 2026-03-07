@@ -1,0 +1,138 @@
+#!/bin/bash
+# ssh-multi
+# D.Kovalov
+# Based on http://linuxpixies.blogspot.jp/2011/06/tmux-copy-mode-and-how-to-control.html
+
+# a script to ssh multiple servers over multiple tmux panes
+
+set -euo pipefail
+
+HOST_LIST_FILE="$HOME/.ssh/host_list"
+WINDOW_NAME="multi-ssh"
+HOSTS_ARR=()
+
+require_commands() {
+    local missing=()
+    local cmd
+
+    for cmd in tmux gum ssh; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            missing+=("$cmd")
+        fi
+    done
+
+    if [ "${#missing[@]}" -gt 0 ]; then
+        printf 'Missing required command(s): %s\n' "${missing[*]}" >&2
+        exit 1
+    fi
+}
+
+append_host() {
+    local host="$1"
+    host="$(printf '%s' "$host" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+    if [ -n "$host" ]; then
+        HOSTS_ARR+=("$host")
+    fi
+}
+
+load_hosts_from_multiline_text() {
+    local text="$1"
+    local line
+    while IFS= read -r line || [ -n "$line" ]; do
+        append_host "$line"
+    done <<< "$text"
+}
+
+build_ssh_cmd() {
+    printf 'ssh %q' "$1"
+}
+
+collect_hosts() {
+    local selection=""
+    local manual_hosts=""
+    local arg
+
+    if [ "$#" -gt 0 ]; then
+        for arg in "$@"; do
+            append_host "$arg"
+        done
+        return
+    fi
+
+    if [ -n "${HOSTS:-}" ]; then
+        case "$HOSTS" in
+            *$'\n'*) load_hosts_from_multiline_text "$HOSTS" ;;
+            *)
+                for arg in $HOSTS; do
+                    append_host "$arg"
+                done
+                ;;
+        esac
+    fi
+
+    if [ "${#HOSTS_ARR[@]}" -gt 0 ]; then
+        return
+    fi
+
+    if [ -f "$HOST_LIST_FILE" ]; then
+        if gum confirm "Open All Servers?"; then
+            while IFS= read -r arg || [ -n "$arg" ]; do
+                append_host "$arg"
+            done < "$HOST_LIST_FILE"
+        else
+            selection="$(gum filter --no-limit < "$HOST_LIST_FILE" || true)"
+            load_hosts_from_multiline_text "$selection"
+        fi
+    else
+        gum style "Tip: create $HOST_LIST_FILE with one host per line to reuse a saved set."
+        manual_hosts="$(gum write --placeholder "Enter one host per line, then press Ctrl+D" || true)"
+        load_hosts_from_multiline_text "$manual_hosts"
+    fi
+}
+
+open_in_current_tmux() {
+    local cmd
+    local i
+
+    cmd="$(build_ssh_cmd "${HOSTS_ARR[0]}")"
+    tmux new-window -n "$WINDOW_NAME" "$cmd"
+    for ((i = 1; i < ${#HOSTS_ARR[@]}; i++)); do
+        cmd="$(build_ssh_cmd "${HOSTS_ARR[$i]}")"
+        tmux split-window -t ":." -h "$cmd"
+        tmux select-layout -t ":." tiled > /dev/null
+    done
+    tmux select-pane -t 0
+    tmux set-window-option -t ":." synchronize-panes on > /dev/null
+}
+
+open_in_new_tmux_session() {
+    local session_name="ssh-multi-$(date +%Y%m%d-%H%M%S)"
+    local target="$session_name:$WINDOW_NAME"
+    local cmd
+    local i
+
+    cmd="$(build_ssh_cmd "${HOSTS_ARR[0]}")"
+    tmux new-session -d -s "$session_name" -n "$WINDOW_NAME" "$cmd"
+    for ((i = 1; i < ${#HOSTS_ARR[@]}; i++)); do
+        cmd="$(build_ssh_cmd "${HOSTS_ARR[$i]}")"
+        tmux split-window -t "$target" -h "$cmd"
+        tmux select-layout -t "$target" tiled > /dev/null
+    done
+    tmux select-pane -t "$target".0
+    tmux set-window-option -t "$target" synchronize-panes on > /dev/null
+    exec tmux attach-session -t "$session_name"
+}
+
+require_commands
+collect_hosts "$@"
+
+if [ "${#HOSTS_ARR[@]}" -eq 0 ]; then
+    printf 'No hosts selected. Aborting.\n' >&2
+    exit 1
+fi
+
+if [ -n "${TMUX:-}" ]; then
+    open_in_current_tmux
+else
+    open_in_new_tmux_session
+fi

@@ -96,7 +96,7 @@ module_sudoer() {
 }
 
 module_packages() {
-  if command -v git &>/dev/null && command -v fish &>/dev/null && command -v fzf &>/dev/null && command -v rg &>/dev/null; then
+  if command -v git &>/dev/null && command -v fish &>/dev/null && command -v fzf &>/dev/null && command -v rg &>/dev/null && command -v tmux &>/dev/null && command -v gum &>/dev/null; then
     skip "System packages"
   elif [ "$OS" = "Darwin" ]; then
     section "System packages"
@@ -106,6 +106,30 @@ module_packages() {
     fi
     run zb init
     run zb install git fish vim fzf ripgrep
+    if ! command -v tmux &>/dev/null; then
+      if ! run zb install tmux; then
+        if ! command -v brew &>/dev/null; then
+          run "NONINTERACTIVE=1 /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+          if [ "$DRY_RUN" = false ]; then
+            [ -x /opt/homebrew/bin/brew ] && eval "$(/opt/homebrew/bin/brew shellenv)"
+            [ -x /usr/local/bin/brew ] && eval "$(/usr/local/bin/brew shellenv)"
+          fi
+        fi
+        run brew install tmux
+      fi
+    fi
+    if ! command -v gum &>/dev/null; then
+      if ! run zb install gum; then
+        if ! command -v brew &>/dev/null; then
+          run "NONINTERACTIVE=1 /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+          if [ "$DRY_RUN" = false ]; then
+            [ -x /opt/homebrew/bin/brew ] && eval "$(/opt/homebrew/bin/brew shellenv)"
+            [ -x /usr/local/bin/brew ] && eval "$(/usr/local/bin/brew shellenv)"
+          fi
+        fi
+        run brew install gum
+      fi
+    fi
     ok
   elif [ "$HAS_SUDO" = false ]; then
     skip "System packages"
@@ -118,13 +142,18 @@ module_packages() {
       gnupg \
       software-properties-common
     run add-apt-repository -y ppa:git-core/ppa
+    run mkdir -p /etc/apt/keyrings
+    run "curl -fsSL https://repo.charm.sh/apt/gpg.key | gpg --dearmor -o /etc/apt/keyrings/charm.gpg"
+    run "echo 'deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *' > /etc/apt/sources.list.d/charm.list"
     run apt-get update -q
     run apt-get install -y -q --no-install-recommends \
       git \
       fish \
       vim \
       fzf \
-      ripgrep
+      ripgrep \
+      tmux \
+      gum
     run rm -rf '/var/lib/apt/lists/*'
     ok
   fi

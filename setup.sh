@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR=""
+[ -n "${BASH_SOURCE[0]:-}" ] && SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_URL="https://github.com/seonjunn/dotfiles"
 REPO_SSH_URL="git@github.com:seonjunn/dotfiles.git"
 
@@ -26,8 +27,16 @@ bootstrap_repo_and_exec() {
 
   if [ ! -d "$dotfiles_dir/.git" ]; then
     echo "[....] Bootstrap dotfiles repo"
-    git clone --recurse-submodules "$REPO_URL" "$dotfiles_dir"
+    git clone "$REPO_URL" "$dotfiles_dir"
     git -C "$dotfiles_dir" remote set-url origin "$REPO_SSH_URL" || true
+    local submod_user="${SUDO_USER:-}"
+    if [ -n "$submod_user" ]; then
+      sudo -u "$submod_user" git -C "$dotfiles_dir" submodule update --init --recursive \
+        || echo "[warn] Submodules not initialized (SSH keys unavailable). Run 'git submodule update --init --recursive' later."
+    else
+      git -C "$dotfiles_dir" submodule update --init --recursive \
+        || echo "[warn] Submodules not initialized. Run 'git submodule update --init --recursive' later."
+    fi
     echo "[ ok ] Bootstrap dotfiles repo"
   fi
 

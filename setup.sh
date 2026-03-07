@@ -31,6 +31,7 @@ bootstrap_repo_and_exec() {
     git -C "$dotfiles_dir" remote set-url origin "$REPO_SSH_URL" || true
     local submod_user="${SUDO_USER:-}"
     if [ -n "$submod_user" ]; then
+      chown -R "$submod_user" "$dotfiles_dir"
       sudo -u "$submod_user" git -C "$dotfiles_dir" submodule update --init --recursive \
         || echo "[warn] Submodules not initialized (SSH keys unavailable). Run 'git submodule update --init --recursive' later."
     else

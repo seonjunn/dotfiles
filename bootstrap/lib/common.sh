@@ -23,7 +23,7 @@ setup_init_env() {
   [ -d "$SETUP_HOME/.zerobrew/bin" ] && export PATH="$SETUP_HOME/.zerobrew/bin:$PATH"
   [ -d "$ZB_PREFIX/bin" ] && export PATH="$ZB_PREFIX/bin:$PATH"
   NVM_DIR="${NVM_DIR:-$SETUP_HOME/.nvm}"
-  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" --no-use
+  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
   export NVM_DIR
 
   HAS_SUDO=false
@@ -51,9 +51,9 @@ run() {
     fi
   else
     if [ $# -eq 1 ]; then
-      eval "$1" &>/dev/null
+      eval "$1" >/dev/null
     else
-      "$@" &>/dev/null
+      "$@" >/dev/null
     fi
   fi
 }

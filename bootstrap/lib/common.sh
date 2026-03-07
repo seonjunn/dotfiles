@@ -25,6 +25,7 @@ setup_init_env() {
   NVM_DIR="${NVM_DIR:-$SETUP_HOME/.nvm}"
   [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
   export NVM_DIR
+  [ -f "$SETUP_HOME/.cargo/env" ] && . "$SETUP_HOME/.cargo/env"
 
   HAS_SUDO=false
   [ -n "${SUDO_USER:-}" ] && HAS_SUDO=true

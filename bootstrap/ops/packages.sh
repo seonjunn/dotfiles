@@ -40,7 +40,7 @@ run_packages() {
     run apt-get install -y -q --no-install-recommends "${apt_bootstrap_packages[@]}"
     run add-apt-repository -y ppa:git-core/ppa
     run mkdir -p /etc/apt/keyrings
-    run "curl -fsSL https://repo.charm.sh/apt/gpg.key | gpg --dearmor -o /etc/apt/keyrings/charm.gpg"
+    run "curl -fsSL https://repo.charm.sh/apt/gpg.key | gpg --yes --dearmor -o /etc/apt/keyrings/charm.gpg"
     run "echo 'deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *' > /etc/apt/sources.list.d/charm.list"
     run apt-get update -q
     run apt-get install -y -q --no-install-recommends "${apt_packages[@]}"

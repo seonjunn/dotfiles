@@ -110,6 +110,11 @@ fi
 
 setup_init_env
 
+if [ -d "$SETUP_DOTFILES_DIR/.git" ] && [ "$DRY_RUN" = false ]; then
+  git -C "$SETUP_DOTFILES_DIR" pull --ff-only 2>/dev/null || true
+  git -C "$SETUP_DOTFILES_DIR" submodule update --init --recursive 2>/dev/null || true
+fi
+
 if [ "$LIST" = true ]; then
   printf '%s\n' "${SETUP_OPS[@]}"
   exit 0

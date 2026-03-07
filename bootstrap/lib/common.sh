@@ -22,6 +22,9 @@ setup_init_env() {
   ZB_PREFIX="${ZEROBREW_PREFIX:-/opt/zerobrew/prefix}"
   [ -d "$SETUP_HOME/.zerobrew/bin" ] && export PATH="$SETUP_HOME/.zerobrew/bin:$PATH"
   [ -d "$ZB_PREFIX/bin" ] && export PATH="$ZB_PREFIX/bin:$PATH"
+  NVM_DIR="${NVM_DIR:-$SETUP_HOME/.nvm}"
+  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" --no-use
+  export NVM_DIR
 
   HAS_SUDO=false
   [ -n "${SUDO_USER:-}" ] && HAS_SUDO=true

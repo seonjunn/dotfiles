@@ -121,4 +121,50 @@ link_shared_skills() {
 
 install_shared_mcp_servers() {
   run uv tool install arxiv-mcp-server
+  if [ "$OS" = "Darwin" ]; then
+    install_macos_formula github-mcp-server
+  fi
+}
+
+# Write a single MCP entry into a given claude.json path (idempotent).
+# Usage: _write_mcp_entry <json_path> <name> <command> <args_json>
+_write_mcp_entry() {
+  python3 - "$1" "$2" "$3" "$4" <<'PYEOF'
+import json, sys
+path, name, cmd, args_json = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+args = json.loads(args_json)
+try:
+    with open(path) as f:
+        data = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    data = {}
+servers = data.setdefault("mcpServers", {})
+if name not in servers:
+    servers[name] = {"command": cmd, "args": args}
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
+    print(f"Registered MCP server '{name}' in {path}")
+PYEOF
+}
+
+# Register an MCP server entry in ~/.claude.json and all CCS instance
+# .claude.json files (idempotent).
+# Usage: register_claude_mcp <name> <command> [args...]
+register_claude_mcp() {
+  local name="$1" cmd="$2"
+  shift 2
+  local args_json
+  args_json=$(python3 -c "import json,sys; print(json.dumps(sys.argv[1:]))" "$@")
+
+  _write_mcp_entry "$SETUP_HOME/.claude.json" "$name" "$cmd" "$args_json"
+
+  # Also register in CCS instance .claude.json files if CCS is installed.
+  local ccs_instances_dir="$SETUP_HOME/.ccs/instances"
+  if [ -d "$ccs_instances_dir" ]; then
+    local instance_json
+    for instance_json in "$ccs_instances_dir"/*/.claude.json; do
+      [ -f "$instance_json" ] || continue
+      _write_mcp_entry "$instance_json" "$name" "$cmd" "$args_json"
+    done
+  fi
 }

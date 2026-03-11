@@ -1,9 +1,4 @@
 {
-  "mcpServers": {
-    "arxiv": {
-      "command": "arxiv-mcp-server"
-    }
-  },
   "permissions": {
     "allow": [
       "Bash(cat *)",

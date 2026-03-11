@@ -31,11 +31,11 @@ if test -d $HOME/.nvm
 	end
 end
 if test $_os = Darwin
-	if test -d /opt/homebrew/bin
-		fish_add_path /opt/homebrew/bin
-	end
 	if test -d /opt/zerobrew/prefix/bin
 		fish_add_path /opt/zerobrew/prefix/bin
+	end
+	if test -d /opt/homebrew/bin
+		fish_add_path /opt/homebrew/bin
 	end
 end
 set -gx EDITOR vim

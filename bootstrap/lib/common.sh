@@ -119,10 +119,35 @@ link_shared_skills() {
   run ln -sf "$SETUP_DOTFILES_DIR/config/agents/skills" "$target_dir"
 }
 
+install_github_mcp_server_linux() {
+  local dest="$SETUP_HOME/.local/bin/github-mcp-server"
+  local api_url="https://api.github.com/repos/github/github-mcp-server/releases/latest"
+  local arch
+  case "$ARCH" in
+    x86_64)  arch="x86_64" ;;
+    aarch64) arch="arm64" ;;
+    *)       echo "Unsupported arch: $ARCH"; return 1 ;;
+  esac
+  local asset_url
+  asset_url=$(curl -fsSL "$api_url" \
+    | python3 -c "import json,sys; r=json.load(sys.stdin); print(next(a['browser_download_url'] for a in r['assets'] if 'Linux_${arch}' in a['name']))")
+  local tmp
+  tmp=$(mktemp -d)
+  curl -fsSL "$asset_url" | tar -xz -C "$tmp"
+  mkdir -p "$SETUP_HOME/.local/bin"
+  mv "$tmp/github-mcp-server" "$dest"
+  chmod +x "$dest"
+  rm -rf "$tmp"
+}
+
 install_shared_mcp_servers() {
   run uv tool install arxiv-mcp-server
   if [ "$OS" = "Darwin" ]; then
     install_macos_formula github-mcp-server
+  elif [ "$OS" = "Linux" ]; then
+    if ! command -v github-mcp-server &>/dev/null; then
+      install_github_mcp_server_linux
+    fi
   fi
 }
 
@@ -139,8 +164,9 @@ try:
 except (FileNotFoundError, json.JSONDecodeError):
     data = {}
 servers = data.setdefault("mcpServers", {})
-if name not in servers:
-    servers[name] = {"command": cmd, "args": args}
+entry = {"command": cmd, "args": args}
+if servers.get(name) != entry:
+    servers[name] = entry
     with open(path, "w") as f:
         json.dump(data, f, indent=2)
     print(f"Registered MCP server '{name}' in {path}")
@@ -148,7 +174,7 @@ PYEOF
 }
 
 # Register an MCP server entry in ~/.claude.json and all CCS instance
-# .claude.json files (idempotent).
+# settings.json files (idempotent).
 # Usage: register_claude_mcp <name> <command> [args...]
 register_claude_mcp() {
   local name="$1" cmd="$2"
@@ -158,13 +184,13 @@ register_claude_mcp() {
 
   _write_mcp_entry "$SETUP_HOME/.claude.json" "$name" "$cmd" "$args_json"
 
-  # Also register in CCS instance .claude.json files if CCS is installed.
+  # Also register in CCS instance settings.json files if CCS is installed.
   local ccs_instances_dir="$SETUP_HOME/.ccs/instances"
   if [ -d "$ccs_instances_dir" ]; then
-    local instance_json
-    for instance_json in "$ccs_instances_dir"/*/.claude.json; do
-      [ -f "$instance_json" ] || continue
-      _write_mcp_entry "$instance_json" "$name" "$cmd" "$args_json"
+    local instance_settings
+    for instance_settings in "$ccs_instances_dir"/*/settings.json; do
+      [ -f "$instance_settings" ] || continue
+      _write_mcp_entry "$instance_settings" "$name" "$cmd" "$args_json"
     done
   fi
 }

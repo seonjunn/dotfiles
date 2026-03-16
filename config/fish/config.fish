@@ -79,6 +79,7 @@ if command -q ccs
   abbr -a cldr  "ccs --resume"
   abbr -a cldd  "ccs --dangerously-skip-permissions"
   abbr -a cldrd "ccs --resume --dangerously-skip-permissions"
+  abbr -a clda  "ccs auth list"
 else if command -q claude
 	abbr -a cld	"claude"
 end

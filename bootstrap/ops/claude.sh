@@ -20,6 +20,7 @@ run_claude() {
     'PATH=$HOME/.local/bin:/opt/homebrew/bin:$PATH exec arxiv-mcp-server'
   register_claude_mcp github /bin/sh -c \
     'GITHUB_PERSONAL_ACCESS_TOKEN=$(PATH=/opt/homebrew/bin:$PATH gh auth token) PATH=$HOME/.local/bin:/opt/homebrew/bin:$PATH exec github-mcp-server stdio'
+  register_claude_mcp sequential-thinking npx -y @modelcontextprotocol/server-sequential-thinking
 }
 
 verify_claude() {

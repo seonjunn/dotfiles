@@ -7,6 +7,10 @@ fi
 
 set -euo pipefail
 
+# Auto-accept new SSH host keys non-interactively (e.g. github.com on a fresh
+# machine). Does not override if already set.
+export GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -o StrictHostKeyChecking=accept-new}"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_URL="https://github.com/seonjunn/dotfiles"
 REPO_SSH_URL="git@github.com:seonjunn/dotfiles.git"

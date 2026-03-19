@@ -116,8 +116,8 @@ if [ "$LIST" = true ]; then
 fi
 
 if [ -d "$SETUP_DOTFILES_DIR/.git" ] && [ "$DRY_RUN" = false ]; then
-  git -C "$SETUP_DOTFILES_DIR" pull --ff-only 2>/dev/null || true
-  git -C "$SETUP_DOTFILES_DIR" submodule update --init --recursive 2>/dev/null || true
+  as_user git -C "$SETUP_DOTFILES_DIR" pull --ff-only 2>/dev/null || true
+  as_user git -C "$SETUP_DOTFILES_DIR" submodule update --init --recursive 2>/dev/null || true
 fi
 
 SETUP_SELECTED_OPS=()

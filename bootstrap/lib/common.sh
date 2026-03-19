@@ -59,6 +59,25 @@ run() {
   fi
 }
 
+# Like run, but executes as the target (non-root) user when invoked via sudo.
+run_as_user() {
+  if [ -n "${SUDO_USER:-}" ] && [ "$(id -u)" -eq 0 ]; then
+    run sudo -u "$TARGET_USER" "$@"
+  else
+    run "$@"
+  fi
+}
+
+# Run a command as the target user without dry-run/verbose wrapping.
+# Used for inline subshell calls (e.g. in verify functions).
+as_user() {
+  if [ -n "${SUDO_USER:-}" ] && [ "$(id -u)" -eq 0 ]; then
+    sudo -u "$TARGET_USER" "$@"
+  else
+    "$@"
+  fi
+}
+
 section() { SECTION="$1"; echo "[....] $1"; }
 ok() { echo "[ ok ] $SECTION"; SECTION=""; }
 skip() { echo "[skip] $1"; SECTION=""; }

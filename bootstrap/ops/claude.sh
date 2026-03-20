@@ -21,9 +21,8 @@ run_claude() {
   install_shared_mcp_servers
   register_claude_mcp arxiv -- /bin/sh -c \
     'PATH=$HOME/.local/bin:/opt/homebrew/bin:$PATH exec arxiv-mcp-server'
-  register_claude_mcp github \
-    -e "GITHUB_PERSONAL_ACCESS_TOKEN=$(awk '/GITHUB_PERSONAL_ACCESS_TOKEN/{print $3}' "$SETUP_HOME/.env")" \
-    -- github-mcp-server stdio
+  register_claude_mcp github -- /bin/sh -c \
+    'GITHUB_PERSONAL_ACCESS_TOKEN=$(awk "/GITHUB_PERSONAL_ACCESS_TOKEN/{print \$4}" "$HOME/.env") PATH=$HOME/.local/bin:/opt/homebrew/bin:$PATH exec github-mcp-server stdio'
   register_claude_mcp sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking
 }
 
@@ -35,13 +34,17 @@ verify_claude() {
     && [ "$(readlink "$SETUP_HOME/.claude/skills" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/agents/skills" ] \
     && [ "$(readlink "$SETUP_HOME/.claude/agents" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/agents" ] \
     && python3 -c "
-import json, sys
-try:
-    d = json.load(open('$SETUP_HOME/.claude.json'))
-    s = d.get('mcpServers', {})
-    assert all(k in s for k in ('arxiv', 'github', 'sequential-thinking'))
-except Exception:
-    sys.exit(1)
+import json, sys, glob
+required = {'arxiv', 'github', 'sequential-thinking'}
+paths = glob.glob('$SETUP_HOME/.ccs/instances/*/.claude.json') or ['$SETUP_HOME/.claude.json']
+for path in paths:
+    try:
+        s = json.load(open(path)).get('mcpServers', {})
+        if not required.issubset(s):
+            sys.exit(1)
+    except Exception:
+        sys.exit(1)
+sys.exit(0)
 "
 }
 

@@ -204,11 +204,73 @@ install_shared_mcp_servers() {
   fi
 }
 
-# Register an MCP server at user scope via the claude CLI (idempotent).
-# Usage: register_claude_mcp <name> [claude mcp add options...] -- <command> [args...]
+# Write an mcpServers entry into a Claude-format settings JSON (idempotent).
+# Usage: _write_mcp_settings <json_path> <name> <command> <args_json> <env_json>
+_write_mcp_settings() {
+  python3 - "$1" "$2" "$3" "$4" "$5" <<'PYEOF'
+import json, sys
+path, name, cmd, args_json, env_json = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+args = json.loads(args_json)
+env = json.loads(env_json)
+try:
+    with open(path) as f:
+        data = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    data = {}
+servers = data.setdefault("mcpServers", {})
+entry = {"command": cmd, "args": args}
+if env:
+    entry["env"] = env
+if servers.get(name) != entry:
+    servers[name] = entry
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
+    print(f"Registered MCP server '{name}' in {path}")
+PYEOF
+}
+
+# Register an MCP server in all CCS instance configs (idempotent).
+# Falls back to claude mcp add --scope user when no CCS instances exist.
+# Usage: register_claude_mcp <name> [-e KEY=VAL]... -- <command> [args...]
 register_claude_mcp() {
   local name="$1"
   shift
-  claude mcp remove "$name" --scope user 2>/dev/null || true
-  run claude mcp add --scope user "$name" "$@"
+
+  # Collect -e/--env KEY=VAL pairs before the -- separator.
+  local env_args=()
+  while [[ "${1:-}" == "-e" || "${1:-}" == "--env" ]]; do
+    env_args+=("$2")
+    shift 2
+  done
+  [[ "${1:-}" == "--" ]] && shift
+
+  local cmd="$1"; shift
+  local args_json env_json
+  args_json=$(python3 -c "import json,sys; print(json.dumps(sys.argv[1:]))" "$@")
+  env_json=$(python3 -c "
+import json, sys
+d = {}
+for p in sys.argv[1:]:
+    k, v = p.split('=', 1)
+    d[k] = v
+print(json.dumps(d))
+" "${env_args[@]+"${env_args[@]}"}")
+
+  local ccs_instances_dir="$SETUP_HOME/.ccs/instances"
+  if [ -d "$ccs_instances_dir" ]; then
+    # Write to every existing CCS instance config.
+    local instance_claude_json
+    for instance_claude_json in "$ccs_instances_dir"/*/.claude.json; do
+      [ -f "$instance_claude_json" ] || continue
+      _write_mcp_settings "$instance_claude_json" "$name" "$cmd" "$args_json" "$env_json"
+    done
+  else
+    # No CCS — fall back to claude CLI (writes to ~/.claude.json).
+    local claude_env_flags=()
+    for ev in "${env_args[@]+"${env_args[@]}"}"; do
+      claude_env_flags+=(-e "$ev")
+    done
+    claude mcp remove "$name" --scope user 2>/dev/null || true
+    run claude mcp add --scope user "${claude_env_flags[@]+"${claude_env_flags[@]}"}" "$name" -- "$cmd" "$@"
+  fi
 }

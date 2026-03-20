@@ -7,10 +7,6 @@ fi
 
 set -euo pipefail
 
-# Auto-accept new SSH host keys non-interactively (e.g. github.com on a fresh
-# machine). Does not override if already set.
-export GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -o StrictHostKeyChecking=accept-new}"
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_URL="https://github.com/seonjunn/dotfiles"
 REPO_SSH_URL="git@github.com:seonjunn/dotfiles.git"
@@ -41,7 +37,10 @@ bootstrap_repo_and_reexec() {
     local submod_user="${SUDO_USER:-}"
     if [ -n "$submod_user" ]; then
       chown -R "$submod_user" "$dotfiles_dir"
-      sudo -u "$submod_user" git -C "$dotfiles_dir" submodule update --init --recursive \
+      local submod_home; submod_home="$(eval echo "~$submod_user")"
+      local submod_env=("HOME=$submod_home")
+      [ -n "${SSH_AUTH_SOCK:-}" ] && submod_env+=("SSH_AUTH_SOCK=$SSH_AUTH_SOCK")
+      sudo -u "$submod_user" env "${submod_env[@]}" git -C "$dotfiles_dir" submodule update --init --recursive \
         || echo "[warn] Submodules not initialized (SSH keys unavailable). Run 'git submodule update --init --recursive' later."
     else
       git -C "$dotfiles_dir" submodule update --init --recursive \

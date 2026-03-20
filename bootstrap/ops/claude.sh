@@ -19,11 +19,12 @@ run_claude() {
   run bash "$SETUP_DOTFILES_DIR/config/agents/skills/l4l/install.sh"
   run bash "$SETUP_DOTFILES_DIR/config/agents/skills/install-research.sh"
   install_shared_mcp_servers
-  register_claude_mcp arxiv /bin/sh -c \
+  register_claude_mcp arxiv -- /bin/sh -c \
     'PATH=$HOME/.local/bin:/opt/homebrew/bin:$PATH exec arxiv-mcp-server'
-  register_claude_mcp github /bin/sh -c \
-    'GITHUB_PERSONAL_ACCESS_TOKEN=$(awk "/GITHUB_PERSONAL_ACCESS_TOKEN/{print \$3}" "$HOME/.env") PATH=$HOME/.local/bin:/opt/homebrew/bin:$PATH exec github-mcp-server stdio'
-  register_claude_mcp sequential-thinking npx -y @modelcontextprotocol/server-sequential-thinking
+  register_claude_mcp github \
+    -e "GITHUB_PERSONAL_ACCESS_TOKEN=$(awk '/GITHUB_PERSONAL_ACCESS_TOKEN/{print $3}' "$SETUP_HOME/.env")" \
+    -- github-mcp-server stdio
+  register_claude_mcp sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking
 }
 
 verify_claude() {

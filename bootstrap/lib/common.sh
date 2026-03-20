@@ -227,7 +227,7 @@ PYEOF
 }
 
 # Register an MCP server entry in ~/.claude.json and all CCS instance
-# settings.json files (idempotent).
+# .claude.json files (idempotent).
 # Usage: register_claude_mcp <name> <command> [args...]
 register_claude_mcp() {
   local name="$1" cmd="$2"
@@ -237,13 +237,13 @@ register_claude_mcp() {
 
   _write_mcp_entry "$SETUP_HOME/.claude.json" "$name" "$cmd" "$args_json"
 
-  # Also register in CCS instance settings.json files if CCS is installed.
+  # Also register in CCS instance .claude.json files if CCS is installed.
   local ccs_instances_dir="$SETUP_HOME/.ccs/instances"
   if [ -d "$ccs_instances_dir" ]; then
-    local instance_settings
-    for instance_settings in "$ccs_instances_dir"/*/settings.json; do
-      [ -f "$instance_settings" ] || continue
-      _write_mcp_entry "$instance_settings" "$name" "$cmd" "$args_json"
+    local instance_claude_json
+    for instance_claude_json in "$ccs_instances_dir"/*/.claude.json; do
+      [ -f "$instance_claude_json" ] || continue
+      _write_mcp_entry "$instance_claude_json" "$name" "$cmd" "$args_json"
     done
   fi
 }

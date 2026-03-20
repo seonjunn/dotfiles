@@ -33,6 +33,10 @@ setup_init_env() {
     TARGET_HOME="$HOME"
   fi
 
+  # Point HOME at the real user so every tool (git, nvm, cargo, …) uses
+  # the right home directory.  We still run as uid 0 for privilege.
+  export HOME="$TARGET_HOME"
+
   SETUP_HOME="$TARGET_HOME"
   SETUP_DOTFILES_DIR="${DOTFILES_DIR:-$SETUP_HOME/.dotfiles}"
   export TARGET_USER TARGET_HOME SETUP_HOME SETUP_DOTFILES_DIR
@@ -42,8 +46,10 @@ setup_init_env() {
   [ -d "$SETUP_HOME/.zerobrew/bin" ] && export PATH="$SETUP_HOME/.zerobrew/bin:$PATH"
   [ -d "$ZB_PREFIX/bin" ] && export PATH="$ZB_PREFIX/bin:$PATH"
   NVM_DIR="${NVM_DIR:-$SETUP_HOME/.nvm}"
-  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-  export NVM_DIR
+  if [ -s "$NVM_DIR/nvm.sh" ]; then
+    . "$NVM_DIR/nvm.sh"
+    export NVM_DIR
+  fi
   [ -f "$SETUP_HOME/.cargo/env" ] && . "$SETUP_HOME/.cargo/env"
 
   HAS_SUDO=false
@@ -81,10 +87,12 @@ run() {
 }
 
 # Run a command as the target (non-root) user when invoked via sudo.
-# Forwards HOME and SSH_AUTH_SOCK so git uses the user's SSH identity.
+# Used for commands that create files in the user's home (git, etc.)
+# so they are owned by the user, not root.  HOME is already set globally;
+# SSH_AUTH_SOCK is forwarded so SSH uses the user's agent.
 as_user() {
   if [ -n "${SUDO_USER:-}" ] && [ "$(id -u)" -eq 0 ]; then
-    local env_args=("HOME=$TARGET_HOME")
+    local env_args=("HOME=$HOME")
     [ -n "${SSH_AUTH_SOCK:-}" ] && env_args+=("SSH_AUTH_SOCK=$SSH_AUTH_SOCK")
     sudo -u "$TARGET_USER" env "${env_args[@]}" "$@"
   else
@@ -95,7 +103,7 @@ as_user() {
 # Like as_user but wrapped in run() for dry-run / verbose support.
 run_as_user() {
   if [ -n "${SUDO_USER:-}" ] && [ "$(id -u)" -eq 0 ]; then
-    local env_args=("HOME=$TARGET_HOME")
+    local env_args=("HOME=$HOME")
     [ -n "${SSH_AUTH_SOCK:-}" ] && env_args+=("SSH_AUTH_SOCK=$SSH_AUTH_SOCK")
     run sudo -u "$TARGET_USER" env "${env_args[@]}" "$@"
   else

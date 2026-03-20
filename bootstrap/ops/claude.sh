@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 
 run_claude() {
-  if ! command -v claude &>/dev/null && ! command -v ccs &>/dev/null; then
+  if ! command -v claude &>/dev/null; then
     run "curl -fsSL https://claude.ai/install.sh | bash"
+    # The installer creates ~/.local/bin/ which may not have been in PATH
+    # when setup_init_env ran.
+    export PATH="$SETUP_HOME/.local/bin:$PATH"
   fi
 
   run mkdir -p "$SETUP_HOME/.claude"
@@ -24,7 +27,8 @@ run_claude() {
 }
 
 verify_claude() {
-  [ "$(readlink "$SETUP_HOME/.claude/CLAUDE.md" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/CLAUDE.md" ] \
+  command -v claude &>/dev/null \
+    && [ "$(readlink "$SETUP_HOME/.claude/CLAUDE.md" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/CLAUDE.md" ] \
     && [ "$(readlink "$SETUP_HOME/.claude/settings.json" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/settings.json" ] \
     && [ "$(readlink "$SETUP_HOME/.claude/commands" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/commands" ] \
     && [ "$(readlink "$SETUP_HOME/.claude/skills" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/agents/skills" ] \

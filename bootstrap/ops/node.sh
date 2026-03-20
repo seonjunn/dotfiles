@@ -6,8 +6,8 @@ run_node() {
     export NVM_DIR="$SETUP_HOME/.nvm"
     [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
   fi
-  run nvm install --lts
-  run nvm alias default lts/*
+  run "nvm install --lts"
+  run "nvm alias default 'lts/*'"
 
   if [ "$DRY_RUN" = false ] && [ -f "$SETUP_HOME/.nvm/nvm.sh" ]; then
     export NVM_DIR="$SETUP_HOME/.nvm"

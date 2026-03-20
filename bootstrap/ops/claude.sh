@@ -32,7 +32,16 @@ verify_claude() {
     && [ "$(readlink "$SETUP_HOME/.claude/settings.json" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/settings.json" ] \
     && [ "$(readlink "$SETUP_HOME/.claude/commands" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/commands" ] \
     && [ "$(readlink "$SETUP_HOME/.claude/skills" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/agents/skills" ] \
-    && [ "$(readlink "$SETUP_HOME/.claude/agents" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/agents" ]
+    && [ "$(readlink "$SETUP_HOME/.claude/agents" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/agents" ] \
+    && python3 -c "
+import json, sys
+try:
+    d = json.load(open('$SETUP_HOME/.claude.json'))
+    s = d.get('mcpServers', {})
+    assert all(k in s for k in ('arxiv', 'github', 'sequential-thinking'))
+except Exception:
+    sys.exit(1)
+"
 }
 
 declare -A OP_CLAUDE=(

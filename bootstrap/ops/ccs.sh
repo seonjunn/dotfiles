@@ -11,7 +11,7 @@ verify_ccs() {
 declare -A OP_CCS=(
   [name]="ccs"
   [category]="installation"
-  [deps]="node"
+  [deps]="claude"
   [run_fn]="run_ccs"
   [verify_fn]="verify_ccs"
   [desc]="ccs"

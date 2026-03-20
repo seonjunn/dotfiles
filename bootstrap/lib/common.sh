@@ -1,5 +1,24 @@
 #!/usr/bin/env bash
 
+# Recover SSH_AUTH_SOCK when sudo has stripped it from the environment.
+# On Linux, walks /proc looking for a live agent socket in SUDO_USER's processes.
+# On macOS, sudo typically preserves it via env_keep so this is a no-op.
+recover_ssh_auth_sock() {
+  [ -n "${SSH_AUTH_SOCK:-}" ] && return 0
+  [ -z "${SUDO_USER:-}" ] && return 0
+  [ "$(id -u)" -eq 0 ] || return 0
+  [ "$(uname -s)" = "Linux" ] || return 0
+  local pid sock
+  for pid in $(pgrep -u "$SUDO_USER" 2>/dev/null); do
+    sock=$(tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null \
+           | grep '^SSH_AUTH_SOCK=' | head -1 | cut -d= -f2-) || true
+    if [ -n "$sock" ] && [ -S "$sock" ]; then
+      export SSH_AUTH_SOCK="$sock"
+      return 0
+    fi
+  done
+}
+
 setup_init_env() {
   [ "$(uname -s)" = "Linux" ] && export DEBIAN_FRONTEND=noninteractive
 
@@ -14,6 +33,10 @@ setup_init_env() {
     TARGET_HOME="$HOME"
   fi
 
+  # Point HOME at the real user so every tool (git, nvm, cargo, …) uses
+  # the right home directory.  We still run as uid 0 for privilege.
+  export HOME="$TARGET_HOME"
+
   SETUP_HOME="$TARGET_HOME"
   SETUP_DOTFILES_DIR="${DOTFILES_DIR:-$SETUP_HOME/.dotfiles}"
   export TARGET_USER TARGET_HOME SETUP_HOME SETUP_DOTFILES_DIR
@@ -23,13 +46,17 @@ setup_init_env() {
   [ -d "$SETUP_HOME/.zerobrew/bin" ] && export PATH="$SETUP_HOME/.zerobrew/bin:$PATH"
   [ -d "$ZB_PREFIX/bin" ] && export PATH="$ZB_PREFIX/bin:$PATH"
   NVM_DIR="${NVM_DIR:-$SETUP_HOME/.nvm}"
-  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-  export NVM_DIR
+  if [ -s "$NVM_DIR/nvm.sh" ]; then
+    . "$NVM_DIR/nvm.sh"
+    export NVM_DIR
+  fi
   [ -f "$SETUP_HOME/.cargo/env" ] && . "$SETUP_HOME/.cargo/env"
 
   HAS_SUDO=false
   [ -n "${SUDO_USER:-}" ] && HAS_SUDO=true
   export HAS_SUDO
+
+  recover_ssh_auth_sock
 
   SECTION=""
   trap '[ -n "${SECTION:-}" ] && echo "[fail] $SECTION"' ERR
@@ -59,33 +86,31 @@ run() {
   fi
 }
 
-# Build the env args needed to impersonate TARGET_USER via sudo.
-# Sets HOME and forwards SSH_AUTH_SOCK so SSH uses the user's keys/agent/known_hosts.
-_user_env_args() {
-  _UEA=("HOME=$TARGET_HOME")
-  [ -n "${SSH_AUTH_SOCK:-}" ] && _UEA+=("SSH_AUTH_SOCK=$SSH_AUTH_SOCK")
+# Run a command as the target (non-root) user when invoked via sudo.
+# Used for commands that create files in the user's home (git, etc.)
+# so they are owned by the user, not root.  HOME is already set globally;
+# SSH_AUTH_SOCK is forwarded so SSH uses the user's agent.
+as_user() {
+  if [ -n "${SUDO_USER:-}" ] && [ "$(id -u)" -eq 0 ]; then
+    local env_args=("HOME=$HOME")
+    [ -n "${SSH_AUTH_SOCK:-}" ] && env_args+=("SSH_AUTH_SOCK=$SSH_AUTH_SOCK")
+    sudo -u "$TARGET_USER" env "${env_args[@]}" "$@"
+  else
+    "$@"
+  fi
 }
 
-# Like run, but executes as the target (non-root) user when invoked via sudo.
+# Like as_user but wrapped in run() for dry-run / verbose support.
 run_as_user() {
   if [ -n "${SUDO_USER:-}" ] && [ "$(id -u)" -eq 0 ]; then
-    _user_env_args
-    run sudo -u "$TARGET_USER" env "${_UEA[@]}" "$@"
+    local env_args=("HOME=$HOME")
+    [ -n "${SSH_AUTH_SOCK:-}" ] && env_args+=("SSH_AUTH_SOCK=$SSH_AUTH_SOCK")
+    run sudo -u "$TARGET_USER" env "${env_args[@]}" "$@"
   else
     run "$@"
   fi
 }
 
-# Run a command as the target user without dry-run/verbose wrapping.
-# Used for inline subshell calls (e.g. in verify functions).
-as_user() {
-  if [ -n "${SUDO_USER:-}" ] && [ "$(id -u)" -eq 0 ]; then
-    _user_env_args
-    sudo -u "$TARGET_USER" env "${_UEA[@]}" "$@"
-  else
-    "$@"
-  fi
-}
 
 section() { SECTION="$1"; echo "[....] $1"; }
 ok() { echo "[ ok ] $SECTION"; SECTION=""; }

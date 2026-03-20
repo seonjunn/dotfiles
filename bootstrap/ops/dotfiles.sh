@@ -11,6 +11,7 @@ run_dotfiles() {
   run_as_user git -C "$SETUP_DOTFILES_DIR" config core.hooksPath .githooks
 
   run ln -sf "$SETUP_DOTFILES_DIR/config/vim/.vimrc" "$SETUP_HOME/.vimrc"
+  run mkdir -p "$SETUP_HOME/.config"
   run rm -rf "$SETUP_HOME/.config/fish"
   run ln -sf "$SETUP_DOTFILES_DIR/config/fish" "$SETUP_HOME/.config/fish"
   run ln -sf "$SETUP_DOTFILES_DIR/config/tmux/.tmux.conf" "$SETUP_HOME/.tmux.conf"

@@ -2,15 +2,15 @@
 
 run_rust() {
   if [ ! -f "$SETUP_HOME/.cargo/bin/rustup" ]; then
-    run "HOME='$SETUP_HOME' curl -sSf https://sh.rustup.rs | HOME='$SETUP_HOME' sh -s -- -y"
+    run "curl -sSf https://sh.rustup.rs | sh -s -- -y"
   fi
 
   if [ "$DRY_RUN" = false ] && [ -f "$SETUP_HOME/.cargo/env" ]; then
     . "$SETUP_HOME/.cargo/env"
   fi
 
-  run HOME="$SETUP_HOME" cargo install zoxide --locked
-  run HOME="$SETUP_HOME" cargo install eza
+  run cargo install zoxide --locked
+  run cargo install eza
 }
 
 verify_rust() {

@@ -256,21 +256,22 @@ for p in sys.argv[1:]:
 print(json.dumps(d))
 " "${env_args[@]+"${env_args[@]}"}")
 
+  # Always register in ~/.claude.json for non-CCS claude and as a baseline
+  # for new CCS instances that inherit from it.
+  local claude_env_flags=()
+  for ev in "${env_args[@]+"${env_args[@]}"}"; do
+    claude_env_flags+=(-e "$ev")
+  done
+  claude mcp remove "$name" --scope user 2>/dev/null || true
+  run claude mcp add --scope user "${claude_env_flags[@]+"${claude_env_flags[@]}"}" "$name" -- "$cmd" "$@"
+
+  # Also write to every existing CCS instance config.
   local ccs_instances_dir="$SETUP_HOME/.ccs/instances"
   if [ -d "$ccs_instances_dir" ]; then
-    # Write to every existing CCS instance config.
     local instance_claude_json
     for instance_claude_json in "$ccs_instances_dir"/*/.claude.json; do
       [ -f "$instance_claude_json" ] || continue
       _write_mcp_settings "$instance_claude_json" "$name" "$cmd" "$args_json" "$env_json"
     done
-  else
-    # No CCS — fall back to claude CLI (writes to ~/.claude.json).
-    local claude_env_flags=()
-    for ev in "${env_args[@]+"${env_args[@]}"}"; do
-      claude_env_flags+=(-e "$ev")
-    done
-    claude mcp remove "$name" --scope user 2>/dev/null || true
-    run claude mcp add --scope user "${claude_env_flags[@]+"${claude_env_flags[@]}"}" "$name" -- "$cmd" "$@"
   fi
 }

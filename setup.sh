@@ -37,7 +37,7 @@ bootstrap_repo_and_exec() {
         local _pid _sock
         for _pid in $(pgrep -u "$submod_user" 2>/dev/null); do
           _sock=$(tr '\0' '\n' < "/proc/$_pid/environ" 2>/dev/null \
-                  | grep '^SSH_AUTH_SOCK=' | head -1 | cut -d= -f2-)
+                  | grep '^SSH_AUTH_SOCK=' | head -1 | cut -d= -f2-) || true
           if [ -n "$_sock" ] && [ -S "$_sock" ]; then SSH_AUTH_SOCK="$_sock"; break; fi
         done
       fi

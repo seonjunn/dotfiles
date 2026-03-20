@@ -59,10 +59,18 @@ run() {
   fi
 }
 
+# Build the env args needed to impersonate TARGET_USER via sudo.
+# Sets HOME and forwards SSH_AUTH_SOCK so SSH uses the user's keys/agent/known_hosts.
+_user_env_args() {
+  _UEA=("HOME=$TARGET_HOME")
+  [ -n "${SSH_AUTH_SOCK:-}" ] && _UEA+=("SSH_AUTH_SOCK=$SSH_AUTH_SOCK")
+}
+
 # Like run, but executes as the target (non-root) user when invoked via sudo.
 run_as_user() {
   if [ -n "${SUDO_USER:-}" ] && [ "$(id -u)" -eq 0 ]; then
-    run sudo -u "$TARGET_USER" "$@"
+    _user_env_args
+    run sudo -u "$TARGET_USER" env "${_UEA[@]}" "$@"
   else
     run "$@"
   fi
@@ -72,7 +80,8 @@ run_as_user() {
 # Used for inline subshell calls (e.g. in verify functions).
 as_user() {
   if [ -n "${SUDO_USER:-}" ] && [ "$(id -u)" -eq 0 ]; then
-    sudo -u "$TARGET_USER" "$@"
+    _user_env_args
+    sudo -u "$TARGET_USER" env "${_UEA[@]}" "$@"
   else
     "$@"
   fi

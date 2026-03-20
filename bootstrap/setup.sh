@@ -37,7 +37,19 @@ bootstrap_repo_and_reexec() {
     local submod_user="${SUDO_USER:-}"
     if [ -n "$submod_user" ]; then
       chown -R "$submod_user" "$dotfiles_dir"
-      sudo -u "$submod_user" git -C "$dotfiles_dir" submodule update --init --recursive \
+      # sudo strips SSH_AUTH_SOCK; recover it from the user's processes (Linux /proc).
+      if [ -z "${SSH_AUTH_SOCK:-}" ] && [ "$(uname -s)" = "Linux" ]; then
+        local _pid _sock
+        for _pid in $(pgrep -u "$submod_user" 2>/dev/null); do
+          _sock=$(tr '\0' '\n' < "/proc/$_pid/environ" 2>/dev/null \
+                  | grep '^SSH_AUTH_SOCK=' | head -1 | cut -d= -f2-)
+          if [ -n "$_sock" ] && [ -S "$_sock" ]; then SSH_AUTH_SOCK="$_sock"; break; fi
+        done
+      fi
+      local submod_env=("HOME=$(eval echo "~$submod_user")")
+      [ -n "${SSH_AUTH_SOCK:-}" ] && submod_env+=("SSH_AUTH_SOCK=$SSH_AUTH_SOCK")
+      sudo -u "$submod_user" env "${submod_env[@]}" \
+        git -C "$dotfiles_dir" submodule update --init --recursive \
         || echo "[warn] Submodules not initialized (SSH keys unavailable). Run 'git submodule update --init --recursive' later."
     else
       git -C "$dotfiles_dir" submodule update --init --recursive \
@@ -116,8 +128,8 @@ if [ "$LIST" = true ]; then
 fi
 
 if [ -d "$SETUP_DOTFILES_DIR/.git" ] && [ "$DRY_RUN" = false ]; then
-  git -C "$SETUP_DOTFILES_DIR" pull --ff-only 2>/dev/null || true
-  git -C "$SETUP_DOTFILES_DIR" submodule update --init --recursive 2>/dev/null || true
+  as_user git -C "$SETUP_DOTFILES_DIR" pull --ff-only 2>/dev/null || true
+  as_user git -C "$SETUP_DOTFILES_DIR" submodule update --init --recursive 2>/dev/null || true
 fi
 
 SETUP_SELECTED_OPS=()

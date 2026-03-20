@@ -1,5 +1,24 @@
 #!/usr/bin/env bash
 
+# Recover SSH_AUTH_SOCK when sudo has stripped it from the environment.
+# On Linux, walks /proc looking for a live agent socket in SUDO_USER's processes.
+# On macOS, sudo typically preserves it via env_keep so this is a no-op.
+recover_ssh_auth_sock() {
+  [ -n "${SSH_AUTH_SOCK:-}" ] && return 0
+  [ -z "${SUDO_USER:-}" ] && return 0
+  [ "$(id -u)" -eq 0 ] || return 0
+  [ "$(uname -s)" = "Linux" ] || return 0
+  local pid sock
+  for pid in $(pgrep -u "$SUDO_USER" 2>/dev/null); do
+    sock=$(tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null \
+           | grep '^SSH_AUTH_SOCK=' | head -1 | cut -d= -f2-)
+    if [ -n "$sock" ] && [ -S "$sock" ]; then
+      export SSH_AUTH_SOCK="$sock"
+      return 0
+    fi
+  done
+}
+
 setup_init_env() {
   [ "$(uname -s)" = "Linux" ] && export DEBIAN_FRONTEND=noninteractive
 
@@ -31,6 +50,8 @@ setup_init_env() {
   [ -n "${SUDO_USER:-}" ] && HAS_SUDO=true
   export HAS_SUDO
 
+  recover_ssh_auth_sock
+
   SECTION=""
   trap '[ -n "${SECTION:-}" ] && echo "[fail] $SECTION"' ERR
 }
@@ -56,6 +77,29 @@ run() {
     else
       "$@" >/dev/null
     fi
+  fi
+}
+
+# Run a command as the target (non-root) user when invoked via sudo.
+# Forwards HOME and SSH_AUTH_SOCK so git uses the user's SSH identity.
+as_user() {
+  if [ -n "${SUDO_USER:-}" ] && [ "$(id -u)" -eq 0 ]; then
+    local env_args=("HOME=$TARGET_HOME")
+    [ -n "${SSH_AUTH_SOCK:-}" ] && env_args+=("SSH_AUTH_SOCK=$SSH_AUTH_SOCK")
+    sudo -u "$TARGET_USER" env "${env_args[@]}" "$@"
+  else
+    "$@"
+  fi
+}
+
+# Like as_user but wrapped in run() for dry-run / verbose support.
+run_as_user() {
+  if [ -n "${SUDO_USER:-}" ] && [ "$(id -u)" -eq 0 ]; then
+    local env_args=("HOME=$TARGET_HOME")
+    [ -n "${SSH_AUTH_SOCK:-}" ] && env_args+=("SSH_AUTH_SOCK=$SSH_AUTH_SOCK")
+    run sudo -u "$TARGET_USER" env "${env_args[@]}" "$@"
+  else
+    run "$@"
   fi
 }
 

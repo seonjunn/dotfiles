@@ -20,7 +20,7 @@ run_claude() {
   run bash "$SETUP_DOTFILES_DIR/config/agents/skills/install-research.sh"
   install_shared_mcp_servers
   register_claude_mcp arxiv -- /bin/sh -c \
-    'PATH=$HOME/.local/bin:/opt/homebrew/bin:$PATH exec arxiv-mcp-server'
+    'PATH=$HOME/.local/bin:/opt/homebrew/bin:$PATH exec uvx arxiv-mcp-server'
   register_claude_mcp github -- /bin/sh -c \
     'GITHUB_PERSONAL_ACCESS_TOKEN=$(awk "/GITHUB_PERSONAL_ACCESS_TOKEN/{print \$4}" "$HOME/.env") PATH=$HOME/.local/bin:/opt/homebrew/bin:$PATH exec github-mcp-server stdio'
   register_claude_mcp sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking
@@ -36,7 +36,7 @@ verify_claude() {
     && python3 -c "
 import json, sys, glob
 required = {'arxiv', 'github', 'sequential-thinking'}
-paths = glob.glob('$SETUP_HOME/.ccs/instances/*/.claude.json') or ['$SETUP_HOME/.claude.json']
+paths = ['$SETUP_HOME/.claude.json'] + glob.glob('$SETUP_HOME/.ccs/instances/*/.claude.json')
 for path in paths:
     try:
         s = json.load(open(path)).get('mcpServers', {})

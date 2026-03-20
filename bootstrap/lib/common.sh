@@ -11,7 +11,7 @@ recover_ssh_auth_sock() {
   local pid sock
   for pid in $(pgrep -u "$SUDO_USER" 2>/dev/null); do
     sock=$(tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null \
-           | grep '^SSH_AUTH_SOCK=' | head -1 | cut -d= -f2-)
+           | grep '^SSH_AUTH_SOCK=' | head -1 | cut -d= -f2-) || true
     if [ -n "$sock" ] && [ -S "$sock" ]; then
       export SSH_AUTH_SOCK="$sock"
       return 0

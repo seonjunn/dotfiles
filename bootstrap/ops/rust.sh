@@ -9,8 +9,8 @@ run_rust() {
     . "$SETUP_HOME/.cargo/env"
   fi
 
-  run HOME="$SETUP_HOME" cargo install zoxide --locked
-  run HOME="$SETUP_HOME" cargo install eza
+  run env HOME="$SETUP_HOME" cargo install zoxide --locked
+  run env HOME="$SETUP_HOME" cargo install eza
 }
 
 verify_rust() {

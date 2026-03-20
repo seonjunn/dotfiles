@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# When invoked via sudo, point HOME at the calling user so every tool
+# (git, nvm, cargo, …) uses the right home directory by default.
+if [ -n "${SUDO_USER:-}" ] && [ "$(id -u)" -eq 0 ]; then
+  export HOME="$(eval echo "~$SUDO_USER")"
+fi
+
 SCRIPT_DIR=""
 [ -n "${BASH_SOURCE[0]:-}" ] && SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_URL="https://github.com/seonjunn/dotfiles"
@@ -45,7 +51,7 @@ bootstrap_repo_and_exec() {
             if [ -n "$_sock" ] && [ -S "$_sock" ]; then SSH_AUTH_SOCK="$_sock"; break; fi
           done
         fi
-        local submod_env=("HOME=$(eval echo "~$submod_user")")
+        local submod_env=("HOME=$HOME")
         [ -n "${SSH_AUTH_SOCK:-}" ] && submod_env+=("SSH_AUTH_SOCK=$SSH_AUTH_SOCK")
         sudo -u "$submod_user" env "${submod_env[@]}" \
           git -C "$dotfiles_dir" submodule update --init --recursive \

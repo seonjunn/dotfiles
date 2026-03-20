@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 run_claude() {
-  if ! command -v claude &>/dev/null && ! command -v ccs &>/dev/null; then
+  if ! command -v claude &>/dev/null; then
     run "curl -fsSL https://claude.ai/install.sh | bash"
   fi
 
@@ -24,11 +24,14 @@ run_claude() {
 }
 
 verify_claude() {
-  [ "$(readlink "$SETUP_HOME/.claude/CLAUDE.md" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/CLAUDE.md" ] \
+  command -v claude &>/dev/null \
+    && [ "$(readlink "$SETUP_HOME/.claude/CLAUDE.md" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/CLAUDE.md" ] \
     && [ "$(readlink "$SETUP_HOME/.claude/settings.json" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/settings.json" ] \
     && [ "$(readlink "$SETUP_HOME/.claude/commands" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/commands" ] \
     && [ "$(readlink "$SETUP_HOME/.claude/skills" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/agents/skills" ] \
-    && [ "$(readlink "$SETUP_HOME/.claude/agents" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/agents" ]
+    && [ "$(readlink "$SETUP_HOME/.claude/agents" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/agents" ] \
+    && command -v github-mcp-server &>/dev/null \
+    && command -v arxiv-mcp-server &>/dev/null
 }
 
 declare -A OP_CLAUDE=(

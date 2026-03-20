@@ -37,11 +37,13 @@ bootstrap_repo_and_reexec() {
     local submod_user="${SUDO_USER:-}"
     if [ -n "$submod_user" ]; then
       chown -R "$submod_user" "$dotfiles_dir"
-      local submod_home; submod_home="$(eval echo "~$submod_user")"
-      local submod_env=("HOME=$submod_home")
-      [ -n "${SSH_AUTH_SOCK:-}" ] && submod_env+=("SSH_AUTH_SOCK=$SSH_AUTH_SOCK")
-      sudo -u "$submod_user" env "${submod_env[@]}" git -C "$dotfiles_dir" submodule update --init --recursive \
-        || echo "[warn] Submodules not initialized (SSH keys unavailable). Run 'git submodule update --init --recursive' later."
+      if [ -n "${SSH_AUTH_SOCK:-}" ]; then
+        sudo -u "$submod_user" env "HOME=$(eval echo "~$submod_user")" "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" \
+          git -C "$dotfiles_dir" submodule update --init --recursive \
+          || echo "[warn] Submodules not initialized. Run 'git submodule update --init --recursive' later."
+      else
+        echo "[warn] No SSH agent available; skipping submodule init. Run 'git submodule update --init --recursive' as $submod_user later."
+      fi
     else
       git -C "$dotfiles_dir" submodule update --init --recursive \
         || echo "[warn] Submodules not initialized. Run 'git submodule update --init --recursive' later."

@@ -74,6 +74,7 @@ bootstrap_repo_and_reexec() {
 
 DRY_RUN=false
 VERBOSE=false
+FORCE=false
 LIST=false
 HELP=false
 MODULES=()
@@ -82,6 +83,7 @@ for arg in "$@"; do
   case $arg in
     --dry-run) DRY_RUN=true ;;
     --verbose) VERBOSE=true ;;
+    --force) FORCE=true ;;
     --list) LIST=true ;;
     --help|-h) HELP=true ;;
     -*)
@@ -92,7 +94,7 @@ for arg in "$@"; do
   esac
 done
 
-export DRY_RUN VERBOSE
+export DRY_RUN VERBOSE FORCE
 
 if [ ! -f "$SCRIPT_DIR/lib/common.sh" ] || [ ! -f "$SCRIPT_DIR/lib/engine.sh" ] || [ ! -d "$SCRIPT_DIR/ops" ]; then
   bootstrap_repo_and_reexec "$@"
@@ -117,6 +119,7 @@ print_help() {
   echo "Options:"
   echo "  --dry-run      Print commands without executing them"
   echo "  --verbose      Show command output"
+  echo "  --force        Re-run all operations, skipping none"
   echo "  --list         List available modules and exit"
   echo "  --help, -h     Show this help message"
   echo ""

@@ -174,7 +174,7 @@ execute_operation() {
   [ -z "$runner" ] && { echo "error: operation '$op' has no runner" >&2; return 1; }
   [ -z "$verify" ] && { echo "error: operation '$op' has no verify function" >&2; return 1; }
 
-  if "$verify"; then
+  if [ "${FORCE:-false}" = false ] && "$verify"; then
     skip "$desc"
     return 0
   fi

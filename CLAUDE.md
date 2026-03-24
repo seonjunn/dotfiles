@@ -39,7 +39,7 @@ This repo targets both **macOS** and **Ubuntu**. Keep all configs and scripts pl
 - `~/.config/fish` → `~/.dotfiles/config/fish`
 - `~/.ipython/profile_default` → `~/.dotfiles/config/ipython/profile_default`
 - `~/.claude/CLAUDE.md` → `~/.dotfiles/config/claude/CLAUDE.md`
-- `~/.claude/settings.json` → `~/.dotfiles/config/claude/settings.json`
+- `~/.claude/settings.json` — copied from `~/.dotfiles/config/claude/settings.json` (not symlinked, to avoid circular-symlink detection)
 - `~/.claude/commands` → `~/.dotfiles/config/claude/commands`
 - `~/.claude/skills` → `~/.dotfiles/config/agents/skills`
 - `~/.claude/agents` → `~/.dotfiles/config/claude/agents`

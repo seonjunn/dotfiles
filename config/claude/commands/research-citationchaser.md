@@ -1,4 +1,4 @@
-<!-- resource_dir: /home/seonjunkim/.dotfiles/config/agents/skills/research/literature-search/citationchaser -->
+<!-- resource_dir: ~/.dotfiles/config/agents/skills/research/literature-search/citationchaser -->
 
 # Citation Chaser
 

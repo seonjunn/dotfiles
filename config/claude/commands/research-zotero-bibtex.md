@@ -1,4 +1,4 @@
-<!-- resource_dir: /home/seonjunkim/.dotfiles/config/agents/skills/research/zotero-integration/zotero-bibtex -->
+<!-- resource_dir: ~/.dotfiles/config/agents/skills/research/zotero-integration/zotero-bibtex -->
 
 # Zotero BibTeX Extractor
 

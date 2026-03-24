@@ -1,4 +1,4 @@
-<!-- resource_dir: /home/seonjunkim/.dotfiles/config/agents/skills/research/literature-search/pdf-finder -->
+<!-- resource_dir: ~/.dotfiles/config/agents/skills/research/literature-search/pdf-finder -->
 
 # PDF Finder
 

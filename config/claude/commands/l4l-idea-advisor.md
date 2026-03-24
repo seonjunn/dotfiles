@@ -1,7 +1,7 @@
-<!-- resource_dir: /home/seonjunkim/.dotfiles/config/agents/skills/l4l/agent-skills/idea-advisor -->
+<!-- resource_dir: ~/.dotfiles/config/agents/skills/l4l/agent-skills/idea-advisor -->
 
 > **Note for slash command use**: Supporting resource files for this skill
-> are located at `/home/seonjunkim/.dotfiles/config/agents/skills/l4l/agent-skills/idea-advisor/`. When this skill instructs you to load a
+> are located at `~/.dotfiles/config/agents/skills/l4l/agent-skills/idea-advisor/`. When this skill instructs you to load a
 > file (e.g., `lampson-deep-notes.md`), prepend that path.
 
 ---

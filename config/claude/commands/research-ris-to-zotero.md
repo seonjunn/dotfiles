@@ -1,4 +1,4 @@
-<!-- resource_dir: /home/seonjunkim/.dotfiles/config/agents/skills/research/conversion-utilities/ris-to-zotero -->
+<!-- resource_dir: ~/.dotfiles/config/agents/skills/research/conversion-utilities/ris-to-zotero -->
 
 # RIS to Zotero Importer
 

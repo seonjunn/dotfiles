@@ -1,4 +1,4 @@
-<!-- resource_dir: /home/seonjunkim/.dotfiles/config/agents/skills/research/literature-search/citation-verifier -->
+<!-- resource_dir: ~/.dotfiles/config/agents/skills/research/literature-search/citation-verifier -->
 
 # Citation Verifier
 

@@ -9,6 +9,8 @@ run_rust() {
     . "$SETUP_HOME/.cargo/env"
   fi
 
+  run rustup update stable
+
   run cargo install zoxide --locked
   run cargo install eza
 }

@@ -1,4 +1,4 @@
-<!-- resource_dir: /Users/seonjunkim/.dotfiles/config/agents/skills/research/zotero-integration/zotero -->
+<!-- resource_dir: /home/seonjunkim/.dotfiles/config/agents/skills/research/zotero-integration/zotero -->
 
 # Zotero API
 

@@ -67,6 +67,7 @@ if command -q git
 	abbr -a gps	"git push"
 	abbr -a gpl	"git pull"
 	abbr -a gco	"git checkout"
+	abbr -a gs	"git switch"
 	abbr -a gd	"git diff"
 	abbr -a gl	"git log --branches --graph --decorate --oneline"
 	abbr -a gst	"git status"
@@ -104,7 +105,8 @@ if command -q adb
 	abbr -a adp	"adb pair"
 	abbr -a adc	"adb connect"
 	abbr -a adsh	"adb shell"
-	set -gx ANDROID_ADB_SERVER_PORT 5307
+	set -gx ANDROID_ADB_SERVER_PORT 5037
+	set -gx ADB_SERVER_PORT 5037
 end
 
 if command -q python3

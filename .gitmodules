@@ -1,6 +1,0 @@
-[submodule "config/agents/skills/l4l"]
-	path = config/agents/skills/l4l
-	url = git@github.com:seonjunn/l4l.git
-[submodule "config/agents/skills/research"]
-	path = config/agents/skills/research
-	url = git@github.com:dostos/skills-research.git

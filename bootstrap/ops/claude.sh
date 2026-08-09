@@ -37,8 +37,6 @@ run_claude() {
   for f in "$SETUP_DOTFILES_DIR/config/agents/skills/"*; do
     run ln -sf "$f" "$SETUP_HOME/.claude/skills/"
   done
-  run bash "$SETUP_DOTFILES_DIR/config/agents/skills/l4l/install.sh"
-  run bash "$SETUP_DOTFILES_DIR/config/agents/skills/install-research.sh"
   install_shared_mcp_servers
   register_claude_mcp arxiv -- /bin/sh -c \
     'PATH=$HOME/.local/bin:/opt/homebrew/bin:$PATH exec uvx arxiv-mcp-server'

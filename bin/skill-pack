@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# skill-pack — package skills from the dotfiles skill tree into .skill archives
+# for upload to the Claude app (Settings -> Capabilities -> Skills).
+#
+# Claude Code and Codex read the skill tree directly via symlink, so they need
+# nothing from this script. The app only accepts an uploaded archive, which is a
+# snapshot: after uploading, the app's copy no longer tracks the source. Re-run
+# this and re-upload whenever a skill changes.
+
+set -euo pipefail
+
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SKILLS_DIR="$DOTFILES_DIR/config/agents/skills"
+OUT_DIR="$HOME/Downloads"
+
+usage() {
+	echo "Usage: skill-pack [-o OUT_DIR] [skill...]"
+	echo "  Packages each named skill into OUT_DIR/<skill>.skill"
+	echo "  With no skill names, packages every skill in the tree."
+	echo "  -o DIR   output directory (default: ~/Downloads)"
+	echo "  -l       list available skills and exit"
+	exit 1
+}
+
+list_skills() {
+	local d
+	for d in "$SKILLS_DIR"/*/; do
+		[ -f "$d/SKILL.md" ] || continue
+		basename "$d"
+	done
+}
+
+skills=()
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+		-o) OUT_DIR="$2"; shift 2 ;;
+		-l) list_skills; exit 0 ;;
+		-h|--help) usage ;;
+		-*) echo "Unknown option: $1" >&2; usage ;;
+		*) skills+=("$1"); shift ;;
+	esac
+done
+
+command -v zip >/dev/null 2>&1 || {
+	echo "error: 'zip' not found (apt install zip / brew install zip)" >&2
+	exit 1
+}
+
+# Not `mapfile`: macOS ships bash 3.2 as /bin/bash and this repo targets it.
+if [[ ${#skills[@]} -eq 0 ]]; then
+	while IFS= read -r s; do
+		skills+=("$s")
+	done < <(list_skills)
+fi
+
+if [[ ${#skills[@]} -eq 0 ]]; then
+	echo "error: no skills found in $SKILLS_DIR" >&2
+	exit 1
+fi
+
+mkdir -p "$OUT_DIR"
+OUT_DIR="$(cd "$OUT_DIR" && pwd)"
+
+status=0
+for name in "${skills[@]}"; do
+	src="$SKILLS_DIR/$name"
+
+	if [[ ! -f "$src/SKILL.md" ]]; then
+		echo "error: $name has no SKILL.md — not a skill" >&2
+		status=1
+		continue
+	fi
+
+	# The app keys the skill off the frontmatter name, not the directory or the
+	# archive filename. A mismatch silently installs under an unexpected name.
+	declared="$(awk '/^---$/{n++; next} n==1 && /^name:/{sub(/^name:[[:space:]]*/, ""); print; exit}' "$src/SKILL.md")"
+	if [[ -z "$declared" ]]; then
+		echo "error: $name/SKILL.md has no 'name:' in frontmatter" >&2
+		status=1
+		continue
+	fi
+	if [[ "$declared" != "$name" ]]; then
+		echo "warn: $name/SKILL.md declares name '$declared'; the app will use that" >&2
+	fi
+
+	out="$OUT_DIR/$name.skill"
+	rm -f "$out"
+	(
+		cd "$SKILLS_DIR"
+		zip -X -q -r "$out" "$name" \
+			-x '*/.DS_Store' '*/__pycache__/*' '*/.git/*' '*/.env'
+	)
+	echo "packed: $out"
+done
+
+exit "$status"

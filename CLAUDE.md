@@ -27,6 +27,30 @@ This repo targets both **macOS** and **Ubuntu**. Keep all configs and scripts pl
 | `bootstrap/` | Modular setup engine (`bootstrap/setup.sh`, `bootstrap/lib`, `bootstrap/ops`) |
 | `setup.sh` | Single bootstrap entrypoint; clones repo if needed and delegates to `bootstrap/setup.sh` |
 
+## Skills
+
+`config/agents/skills/` is the single source of truth for skills across all three consumers. A skill is a directory with a `SKILL.md` at its root carrying `name` and `description` frontmatter.
+
+| Consumer | How it gets the skill |
+|---|---|
+| Claude Code | `bootstrap/ops/claude.sh` symlinks each top-level entry into `~/.claude/skills/` |
+| Codex | `bootstrap/ops/codex.sh` symlinks the whole tree to `~/.agents/skills` |
+| Claude app (web/mobile/desktop) | manual upload of a `.skill` archive built by `bin/skill-pack` |
+
+The first two are live symlinks — edit a file and it takes effect. **The app is not.** An uploaded `.skill` is a snapshot; the app's copy stops tracking the source the moment it lands. Edits here do not reach it.
+
+To update the app after changing a skill:
+
+```sh
+skill-pack session-export        # writes ~/Downloads/session-export.skill
+```
+
+Then in the app: Settings → Capabilities → Skills → delete the old entry → upload the new archive. `skill-pack` with no arguments packs every skill; `-l` lists them, `-o DIR` changes the output directory.
+
+Write skills to work in both environments rather than forking per consumer — branch inside `SKILL.md` on what differs (filesystem paths, available tools) so one file serves all three.
+
+Current skills: `session-export/`.
+
 ## Bootstrap order
 
 1. Run `setup.sh` via `sudo bash` (once, on a fresh machine, to grant passwordless sudo)

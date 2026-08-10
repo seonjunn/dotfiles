@@ -49,7 +49,7 @@ Then in the app: Settings → Capabilities → Skills → delete the old entry �
 
 Write skills to work in both environments rather than forking per consumer — branch inside `SKILL.md` on what differs (filesystem paths, available tools) so one file serves all three.
 
-Current skills: `session-export/`.
+Current skills: `paper-review/`, `session-export/`.
 
 ## Bootstrap order
 

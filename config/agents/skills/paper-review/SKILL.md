@@ -19,9 +19,13 @@ co-reviewer's review.
 
 Sort out what arrived before starting.
 
-- **Paper.** Read it from disk rather than skimming what appears in context. For a
-  PDF, consult `/mnt/skills/public/pdf-reading/SKILL.md` first so that figures,
-  tables, and section structure are extracted rather than guessed at.
+- **Paper.** Read it from disk rather than skimming what appears in context. Figures,
+  tables, and section structure have to be extracted rather than guessed at, and the
+  mechanism differs by environment: in web/mobile chat, consult
+  `/mnt/skills/public/pdf-reading/SKILL.md` first; in Claude Code, read the PDF in
+  page ranges, which renders each page so that figures and tables arrive intact.
+  Either way, cover every page before step 2, since the negative claims checked
+  there hold only against the whole paper.
 - **Review form.** Reproduce its fields and their order exactly, including the
   numbered options for scores. Mark the selected option in the way the form implies.
 - **Guideline or checklist.** A supplied one governs. When none is supplied, read

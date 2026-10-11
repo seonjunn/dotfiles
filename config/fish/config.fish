@@ -131,6 +131,9 @@ if status is-interactive; and set -q SSH_CONNECTION
 	if test -f ~/.dotfiles/.setup-needed
 		echo "dotfiles: setup.sh changed — run dotsetup (or ~/.dotfiles/setup.sh)"
 	end
+	if test -f ~/.dotfiles/.dotpl-failed
+		echo "dotfiles: auto-pull is failing — see ~/.dotfiles/.dotpl.log"
+	end
 end
 
 if command -q fzf

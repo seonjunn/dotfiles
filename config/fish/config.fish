@@ -14,11 +14,11 @@ end
 # Core Environment
 
 set -l _os (uname)
-set -gx PATH $HOME/.dotfiles/bin $PATH
-set -gx PATH $HOME/.local/bin $PATH
-set -gx PATH $HOME/bin $PATH
+fish_add_path -g $HOME/.dotfiles/bin
+fish_add_path -g $HOME/.local/bin
+fish_add_path -g $HOME/bin
 if test -d $HOME/.cargo
-	set -gx PATH $HOME/.cargo/bin $PATH
+	fish_add_path -g $HOME/.cargo/bin
 end
 if test -d $HOME/.nvm
 	set -gx NVM_DIR $HOME/.nvm
@@ -27,21 +27,21 @@ if test -d $HOME/.nvm
 		set _ver (string trim (cat "$NVM_DIR/alias/$_ver"))
 	end
 	if test -d "$NVM_DIR/versions/node/$_ver"
-		set -gx PATH "$NVM_DIR/versions/node/$_ver/bin" $PATH
+		fish_add_path -g "$NVM_DIR/versions/node/$_ver/bin"
 	end
 end
 if test $_os = Darwin
 	if test -d /opt/zerobrew/prefix/bin
-		fish_add_path /opt/zerobrew/prefix/bin
+		fish_add_path -g /opt/zerobrew/prefix/bin
 	end
 	if test -d /opt/homebrew/bin
-		fish_add_path /opt/homebrew/bin
+		fish_add_path -g /opt/homebrew/bin
 	end
 end
 set -gx EDITOR vim
 set -gx TERM xterm-256color
-set -Ux LANG en_US.UTF-8
-set -Ux LC_ALL en_US.UTF-8
+set -gx LANG en_US.UTF-8
+set -gx LC_ALL en_US.UTF-8
 
 # Alias
 
@@ -120,6 +120,7 @@ else
 	abbr -a l	"ls -l"
 end
 
+abbr -a rp "realpath"
 
 # Util
 
@@ -144,3 +145,4 @@ end
 if command -q zoxide
 	zoxide init fish | source
 end
+

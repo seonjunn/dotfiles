@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Claude Code status line, shared by every machine.
 
-model | user@host:cwd (branch) | account | ctx 82%/1M | cache 12m [| UNATTENDED]
+model (effort) | user@host:cwd (branch) | account | ctx 82%/1M | cache 12m [| UNATTENDED]
 
 Input is the JSON Claude Code passes on stdin. Never prints tokens or secrets:
 the account is read from the oauthAccount.emailAddress field only.
@@ -14,10 +14,10 @@ import sys
 import time
 from pathlib import Path
 
-G, B, M, Y, R, GR, D, N = (
-    "\033[01;32m", "\033[01;34m", "\033[35m", "\033[33m", "\033[31m", "\033[32m", "\033[2m", "\033[00m"
+G, B, M, Y, R, GR, N = (
+    "\033[01;32m", "\033[01;34m", "\033[35m", "\033[33m", "\033[31m", "\033[32m", "\033[00m"
 )
-SEP = f" {D}|{N} "
+SEP = " | "
 
 
 def get(obj, *keys):
@@ -91,8 +91,9 @@ def main():
 
     parts = []
     model = get(d, "model", "display_name")
+    effort = get(d, "effort", "level")
     if model:
-        parts.append(str(model))
+        parts.append(f"{model} ({effort})" if effort else str(model))
 
     cwd = get(d, "workspace", "current_dir") or d.get("cwd") or os.getcwd()
     home = str(Path.home())
@@ -103,7 +104,7 @@ def main():
         loc += f" {M}({br}){N}"
     parts.append(loc)
 
-    parts.append(f"{D}{account()}{N}")
+    parts.append(account())
 
     used = get(d, "context_window", "used_percentage")
     size = get(d, "context_window", "context_window_size")
@@ -111,7 +112,7 @@ def main():
         c = R if used >= 90 else Y if used >= 80 else GR
         ctx = f"{c}ctx {round(used)}%{N}"
         if isinstance(size, (int, float)) and size:
-            ctx += f"{D}/{human(int(size))}{N}"
+            ctx += f"/{human(int(size))}"
         parts.append(ctx)
 
     pc = d.get("prompt_cache")

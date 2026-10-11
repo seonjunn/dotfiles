@@ -47,5 +47,10 @@
       "Bash(docker ps *)",
       "Bash(docker images *)"
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "python3 \"$HOME/.claude/statusline.py\"",
+    "refreshInterval": 15
   }
 }

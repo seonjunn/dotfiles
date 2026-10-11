@@ -10,6 +10,7 @@ run_claude() {
 
   run mkdir -p "$SETUP_HOME/.claude"
   run ln -sf "$SETUP_DOTFILES_DIR/config/claude/CLAUDE.md" "$SETUP_HOME/.claude/CLAUDE.md"
+  run ln -sf "$SETUP_DOTFILES_DIR/config/claude/statusline.py" "$SETUP_HOME/.claude/statusline.py"
 
   # settings.json: copy (not symlink) so ~/.claude is never a symlink target
   # inside a git repo, which triggers Claude Code's circular-symlink detection.

@@ -11,7 +11,7 @@
   };
 
   outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, ... }: {
-    # Machine-agnostic modules. Machine-specific configs import these (see the private infra repo).
+    # Machine-agnostic modules. A machine's own config can import these and add its specifics.
     homeModules = {
       base = ./nix/home/base.nix;
       cli = ./nix/home/cli.nix;

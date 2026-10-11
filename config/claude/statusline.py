@@ -71,7 +71,7 @@ def account():
 
 
 def mode(session_id):
-    # Written by the attended/unattended machinery (see infra docs/agent-workflow-design.md).
+    # Optional: a file holding "unattended" marks the session as running without a person.
     if not session_id:
         return ""
     f = Path.home() / ".local/state/agent" / f"mode-{session_id}"

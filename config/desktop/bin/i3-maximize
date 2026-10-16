@@ -1,36 +1,75 @@
 #!/usr/bin/env python3
 """Toggle a 'fullscreen' that leaves the top bar visible: the focused tiled window
 is made floating and sized to the workspace area (which excludes the bar).
-Toggling again re-tiles it. Floating windows fall back to real fullscreen."""
-import json, subprocess
+Toggling again re-tiles it. Floating windows fall back to real fullscreen.
+
+  i3-maximize               toggle
+  i3-maximize focus DIR     focus left/right/up/down
+  i3-maximize move DIR      move
+                            While a window is maximized, the windows hidden behind it are treated as
+                            absent: focus goes to the monitor in that direction, and move takes the
+                            window to that monitor, maximized there (plain `move` would push the
+                            floating window by a few pixels). Mod+f again to leave."""
+import json, subprocess, sys
 
 def i3(cmd):
     return subprocess.run(["i3-msg", cmd], capture_output=True, text=True).stdout
 
-tree = json.loads(i3("-t get_tree") if False else subprocess.run(["i3-msg", "-t", "get_tree"], capture_output=True, text=True).stdout)
+def focused():
+    tree = json.loads(subprocess.run(["i3-msg", "-t", "get_tree"], capture_output=True, text=True).stdout)
 
-def find(n, ws=None, floating=False):
-    if n.get("type") == "workspace":
-        ws = n
-    if n.get("type") == "floating_con":
-        floating = True
-    if n.get("focused") and n.get("window"):
-        return n, ws, floating
-    for c in n.get("nodes", []) + n.get("floating_nodes", []):
-        r = find(c, ws, floating)
-        if r:
-            return r
+    def find(n, ws=None, floating=False):
+        if n.get("type") == "workspace":
+            ws = n
+        if n.get("type") == "floating_con":
+            floating = True
+        if n.get("focused") and n.get("window"):
+            return n, ws, floating
+        for c in n.get("nodes", []) + n.get("floating_nodes", []):
+            r = find(c, ws, floating)
+            if r:
+                return r
 
-found = find(tree)
+    return find(tree)
+
+# i3 marks are unique: a mark set on one window is taken off any other. So each maximized window
+# gets its own mark, _max_<con id>.
+def is_max(con):
+    return any(m.startswith("_max_") for m in con.get("marks", []))
+
+def maximize(con, ws):
+    r = ws["rect"]
+    i3(f'[con_id={con["id"]}] mark --add _max_{con["id"]}, floating enable, border none, '
+       f'resize set {r["width"]} {r["height"]}, move position {r["x"]} {r["y"]}')
+
+def unmaximize(con):
+    i3(f'[con_id={con["id"]}] floating disable, unmark _max_{con["id"]}, border pixel 2')
+
+args = sys.argv[1:]
+found = focused()
+
+if args and args[0] in ("focus", "move"):
+    action, direction = args[0], args[1]
+    if not found or not is_max(found[0]):
+        i3(f"{action} {direction}")
+    elif action == "focus":
+        i3(f"focus output {direction}")
+    else:
+        con = found[0]
+        i3(f'[con_id={con["id"]}] move container to output {direction}')
+        i3(f'[con_id={con["id"]}] focus')
+        moved = focused()
+        if moved and moved[0]["id"] == con["id"]:
+            maximize(con, moved[1])   # fit the other monitor's workspace
+    raise SystemExit
+
 if not found:
     raise SystemExit
 con, ws, floating = found
 
-if "_max" in con.get("marks", []):
-    i3(f'[con_id={con["id"]}] floating disable, unmark _max, border pixel 2')
+if is_max(con):
+    unmaximize(con)
 elif floating or con.get("fullscreen_mode"):
     i3("fullscreen toggle")
 else:
-    r = ws["rect"]
-    i3(f'[con_id={con["id"]}] mark _max, floating enable, border none, '
-       f'resize set {r["width"]} {r["height"]}, move position {r["x"]} {r["y"]}')
+    maximize(con, ws)

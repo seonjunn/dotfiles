@@ -154,28 +154,28 @@ client.background        $base
 
 
 # change focus
-bindsym $mod+h focus left
-bindsym $mod+j focus down
-bindsym $mod+k focus up
-bindsym $mod+l focus right
+bindsym $mod+h exec --no-startup-id ~/.local/bin/i3-maximize focus left
+bindsym $mod+j exec --no-startup-id ~/.local/bin/i3-maximize focus down
+bindsym $mod+k exec --no-startup-id ~/.local/bin/i3-maximize focus up
+bindsym $mod+l exec --no-startup-id ~/.local/bin/i3-maximize focus right
 
 # alternatively, you can use the cursor keys:
-bindsym $mod+Left focus left
-bindsym $mod+Down focus down
-bindsym $mod+Up focus up
-bindsym $mod+Right focus right
+bindsym $mod+Left exec --no-startup-id ~/.local/bin/i3-maximize focus left
+bindsym $mod+Down exec --no-startup-id ~/.local/bin/i3-maximize focus down
+bindsym $mod+Up exec --no-startup-id ~/.local/bin/i3-maximize focus up
+bindsym $mod+Right exec --no-startup-id ~/.local/bin/i3-maximize focus right
 
 # move focused window
-bindsym $mod+Shift+h move left
-bindsym $mod+Shift+j move down
-bindsym $mod+Shift+k move up
-bindsym $mod+Shift+l move right
+bindsym $mod+Shift+h exec --no-startup-id ~/.local/bin/i3-maximize move left
+bindsym $mod+Shift+j exec --no-startup-id ~/.local/bin/i3-maximize move down
+bindsym $mod+Shift+k exec --no-startup-id ~/.local/bin/i3-maximize move up
+bindsym $mod+Shift+l exec --no-startup-id ~/.local/bin/i3-maximize move right
 
 # alternatively, you can use the cursor keys:
-bindsym $mod+Shift+Left move left
-bindsym $mod+Shift+Down move down
-bindsym $mod+Shift+Up move up
-bindsym $mod+Shift+Right move right
+bindsym $mod+Shift+Left exec --no-startup-id ~/.local/bin/i3-maximize move left
+bindsym $mod+Shift+Down exec --no-startup-id ~/.local/bin/i3-maximize move down
+bindsym $mod+Shift+Up exec --no-startup-id ~/.local/bin/i3-maximize move up
+bindsym $mod+Shift+Right exec --no-startup-id ~/.local/bin/i3-maximize move right
 
 # split in horizontal orientation
 bindsym $mod+Shift+v split h

@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 
 run_ipython() {
+  hm_active && return 0 # Home Manager links the profile on HM machines
   run mkdir -p "$SETUP_HOME/.ipython"
   run rm -rf "$SETUP_HOME/.ipython/profile_default"
   run ln -sf "$SETUP_DOTFILES_DIR/config/ipython/profile_default" "$SETUP_HOME/.ipython/profile_default"
 }
 
 verify_ipython() {
-  [ "$(readlink "$SETUP_HOME/.ipython/profile_default" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/ipython/profile_default" ]
+  hm_active || [ "$(readlink "$SETUP_HOME/.ipython/profile_default" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/ipython/profile_default" ]
 }
 
 declare -A OP_IPYTHON=(

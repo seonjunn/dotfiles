@@ -1,0 +1,13 @@
+# git settings, read by nix/home/git.nix (data only). Identity is not here: set programs.git.settings.user in your own config.
+
+[settings]
+core.editor = "vim"
+diff.colorMoved = "default"
+push.autoSetupRemote = true
+alias.root = "rev-parse --show-toplevel"
+
+[delta]
+navigate = true
+light = false
+side-by-side = true
+line-numbers = true

@@ -4,7 +4,7 @@
 #          restore: trash-restore, list: trash-list
 #   macOS: /usr/bin/trash (Finder trash; restore with Finder's "Put Back")
 # rm's options (-r -f -i -v -d -I, combined like -rf) are accepted and ignored, so `rm -rf dir` works.
-# Real deletion: `command rm ...`. Under sudo the files go to root's trash.
+# Real deletion: `rm-fr` (plain /bin/rm). Under sudo the files go to root's trash.
 set -e
 files=""
 endopts=0
@@ -13,7 +13,7 @@ for a in "$@"; do
     case "$a" in
       --) endopts=1; continue ;;
       --recursive|--force|--interactive*|--verbose|--dir|-[rRfivdI]*) continue ;;
-      -*) echo "trash-rm: unknown option $a (use 'command rm' for real rm)" >&2; exit 2 ;;
+      -*) echo "trash-rm: unknown option $a (use rm-fr for real rm)" >&2; exit 2 ;;
     esac
   fi
   [ -e "$a" ] || [ -L "$a" ] || { echo "trash-rm: $a: no such file" >&2; status=1; continue; }

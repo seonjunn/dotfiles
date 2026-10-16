@@ -1,0 +1,42 @@
+#!/bin/sh
+# trash-rm: what the interactive `rm` abbr runs. Moves files to the trash instead of deleting them.
+#   Linux: trash-cli (freedesktop trash, ~/.local/share/Trash; same trash as the file manager)
+#          restore: trash-restore, list: trash-list
+#   macOS: /usr/bin/trash (Finder trash; restore with Finder's "Put Back")
+# rm's options (-r -f -i -v -d -I, combined like -rf) are accepted and ignored, so `rm -rf dir` works.
+# Real deletion: `command rm ...`. Under sudo the files go to root's trash.
+set -e
+files=""
+endopts=0
+for a in "$@"; do
+  if [ "$endopts" = 0 ]; then
+    case "$a" in
+      --) endopts=1; continue ;;
+      --recursive|--force|--interactive*|--verbose|--dir|-[rRfivdI]*) continue ;;
+      -*) echo "trash-rm: unknown option $a (use 'command rm' for real rm)" >&2; exit 2 ;;
+    esac
+  fi
+  [ -e "$a" ] || [ -L "$a" ] || { echo "trash-rm: $a: no such file" >&2; status=1; continue; }
+  files="$files
+$a"
+done
+[ -n "$files" ] || exit "${status:-0}"
+case "$(uname)" in
+  Darwin) cmd=/usr/bin/trash ;;
+  *)
+    cmd=$(command -v trash-put || true)
+    # sudo's PATH does not include the user's Nix profile
+    [ -n "$cmd" ] || { [ -n "$SUDO_USER" ] && cmd=$(eval echo "~$SUDO_USER")/.nix-profile/bin/trash-put; }
+    [ -x "$cmd" ] || { echo "trash-rm: trash-put not found (install trash-cli)" >&2; exit 1; } ;;
+esac
+# macOS trash returns 0 even when it did nothing, so check that each file is gone afterwards
+printf '%s\n' "$files" | sed '1d' | {
+  rc=0
+  while IFS= read -r f; do
+    case "$f" in -*) f="./$f" ;; esac   # neither tool takes "--"
+    "$cmd" "$f" || true
+    if [ -e "$f" ] || [ -L "$f" ]; then echo "trash-rm: could not trash $f" >&2; rc=1; fi
+  done
+  exit $rc
+} || status=1
+exit "${status:-0}"

@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "adb-shell": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1713186470,
+        "narHash": "sha256-rxlkamt1pqPkNtDFn26FdUoUC6/KpiMWsrJUo5qjn2I=",
+        "owner": "matan-h",
+        "repo": "adb-shell",
+        "rev": "e35d1e510a66356a7866bb67673442861c56c794",
+        "type": "github"
+      },
+      "original": {
+        "owner": "matan-h",
+        "repo": "adb-shell",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -55,6 +71,7 @@
     },
     "root": {
       "inputs": {
+        "adb-shell": "adb-shell",
         "home-manager": "home-manager",
         "nixpkgs": "nixpkgs",
         "nixpkgs-unstable": "nixpkgs-unstable"

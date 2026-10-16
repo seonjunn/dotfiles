@@ -7,6 +7,9 @@ names = ["bat", "eza", "fd", "gh", "gum", "jq", "ripgrep", "yq-go", "nixfmt"]
 [dev]  # build tools
 names = ["cmake"]
 
+[android]  # devices over adb (android.nix, opt-in); SDK/NDK for builds are not here
+names = ["android-tools"]  # adb, fastboot
+
 [editor]
 names = ["vim"]
 

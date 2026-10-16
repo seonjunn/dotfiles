@@ -11,6 +11,7 @@
     ./terminal.nix
     ./node.nix
     ./agents.nix
+    ./trash.nix
   ];
 
   programs.home-manager.enable = true;

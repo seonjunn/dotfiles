@@ -3,8 +3,11 @@
 run_yq() {
   local yq_arch
 
-  if [ "$OS" = "Darwin" ]; then
-    run zb install yq
+  if hm_active; then
+    return 0
+  elif [ "$OS" = "Darwin" ]; then
+    ensure_brew
+    run brew install yq
   elif [ "$HAS_SUDO" = true ]; then
     yq_arch=amd64
     [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ] && yq_arch=arm64
@@ -14,7 +17,9 @@ run_yq() {
 }
 
 verify_yq() {
-  if [ "$OS" = "Darwin" ] || [ "$HAS_SUDO" = true ]; then
+  if hm_active; then
+    return 0
+  elif [ "$OS" = "Darwin" ] || [ "$HAS_SUDO" = true ]; then
     command -v yq &>/dev/null
   else
     return 0

@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 
 run_git_config() {
+  hm_active && return 0 # Home Manager writes ~/.config/git/config; ~/.gitconfig is left to tools
   run_as_user git config --global user.email "cyanide17@snu.ac.kr"
   run_as_user git config --global user.name "Seonjun Kim"
   run_as_user git config --global push.autoSetupRemote true
 }
 
 verify_git_config() {
+  hm_active && return 0
   [ "$(as_user git config --global --get user.email 2>/dev/null || true)" = "cyanide17@snu.ac.kr" ] \
     && [ "$(as_user git config --global --get user.name 2>/dev/null || true)" = "Seonjun Kim" ] \
     && [ "$(as_user git config --global --get push.autoSetupRemote 2>/dev/null || true)" = "true" ]

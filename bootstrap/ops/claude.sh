@@ -15,8 +15,11 @@ run_claude() {
   # settings.json: copy (not symlink) so ~/.claude is never a symlink target
   # inside a git repo, which triggers Claude Code's circular-symlink detection.
   # Remove any existing symlink before copying (cp fails if src and dst resolve to the same file).
-  run rm -f "$SETUP_HOME/.claude/settings.json"
-  run cp "$SETUP_DOTFILES_DIR/config/claude/settings.json" "$SETUP_HOME/.claude/settings.json"
+  # A machine with ~/.claude/settings.host.json builds settings.json with `claude-settings apply`; leave it.
+  if [ ! -e "$SETUP_HOME/.claude/settings.host.json" ]; then
+    run rm -f "$SETUP_HOME/.claude/settings.json"
+    run cp "$SETUP_DOTFILES_DIR/config/claude/settings.json" "$SETUP_HOME/.claude/settings.json"
+  fi
 
   # commands/agents/skills: real directories with per-entry symlinks inside.
   # Claude Code only checks top-level ~/.claude/* entries for circular symlinks,

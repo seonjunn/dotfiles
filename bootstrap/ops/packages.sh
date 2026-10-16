@@ -1,36 +1,21 @@
 #!/usr/bin/env bash
 
-install_macos_formula() {
-  local formula="$1"
-
-  if run zb install "$formula"; then
-    return 0
-  fi
-
-  ensure_brew
-  run brew install "$formula"
-}
-
 run_packages() {
   local macos_packages=(git:git fish:fish vim:vim fzf:fzf rg:ripgrep tmux:tmux gum:gum)
   local apt_bootstrap_packages=(ca-certificates curl gnupg software-properties-common)
   local apt_packages=(git fish vim fzf ripgrep tmux gum)
   local pkg command_name formula
 
-  if [ "$OS" = "Darwin" ]; then
-    if ! command -v zb &>/dev/null; then
-      run "curl -fsSL https://zerobrew.rs/install | bash"
-      if [ "$DRY_RUN" = false ]; then
-        export PATH="$SETUP_HOME/.local/bin:$PATH"
-      fi
-    fi
-
-    run zb init
+  # Home Manager installs these tools; apt or brew copies would shadow or duplicate them.
+  if hm_active; then
+    return 0
+  elif [ "$OS" = "Darwin" ]; then
     for pkg in "${macos_packages[@]}"; do
       command_name="${pkg%%:*}"
       formula="${pkg##*:}"
       if ! command -v "$command_name" &>/dev/null; then
-        install_macos_formula "$formula"
+        ensure_brew
+        run brew install "$formula"
       fi
     done
   elif [ "$HAS_SUDO" = false ]; then
@@ -50,7 +35,9 @@ run_packages() {
 
 verify_packages() {
   local required_cmds=(git fish fzf rg tmux gum)
-  if [ "$OS" = "Darwin" ] || [ "$HAS_SUDO" = true ]; then
+  if hm_active; then
+    return 0
+  elif [ "$OS" = "Darwin" ] || [ "$HAS_SUDO" = true ]; then
     has_all_commands "${required_cmds[@]}"
   else
     # non-sudo Linux: nothing actionable for package install

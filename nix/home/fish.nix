@@ -35,6 +35,11 @@ in
         source $HOME/.env
       end
 
+      # macOS: Homebrew (casks and the few tools not in Nix) after Nix and the system
+      if test -d /opt/homebrew/bin; and not contains -- /opt/homebrew/bin $PATH
+        set -gx PATH $PATH /opt/homebrew/bin /opt/homebrew/sbin
+      end
+
       # rustup toolchains (cargo, rustc), last in PATH
       if test -d $HOME/.cargo/bin; and not contains -- $HOME/.cargo/bin $PATH
         set -gx PATH $PATH $HOME/.cargo/bin

@@ -9,38 +9,44 @@ run_claude() {
   fi
 
   run mkdir -p "$SETUP_HOME/.claude"
-  run ln -sf "$SETUP_DOTFILES_DIR/config/claude/CLAUDE.md" "$SETUP_HOME/.claude/CLAUDE.md"
-  run ln -sf "$SETUP_DOTFILES_DIR/config/claude/statusline.py" "$SETUP_HOME/.claude/statusline.py"
+  # Home Manager links these files on HM machines (dotfiles nix/home/agents.nix, decision D30 in infra).
+  if ! hm_active; then
+    run ln -sf "$SETUP_DOTFILES_DIR/config/claude/CLAUDE.md" "$SETUP_HOME/.claude/CLAUDE.md"
+    run ln -sf "$SETUP_DOTFILES_DIR/config/claude/statusline.py" "$SETUP_HOME/.claude/statusline.py"
 
-  # settings.json: copy (not symlink) so ~/.claude is never a symlink target
-  # inside a git repo, which triggers Claude Code's circular-symlink detection.
-  # Remove any existing symlink before copying (cp fails if src and dst resolve to the same file).
-  # A machine with ~/.claude/settings.host.json builds settings.json with `claude-settings apply`; leave it.
-  if [ ! -e "$SETUP_HOME/.claude/settings.host.json" ]; then
-    run rm -f "$SETUP_HOME/.claude/settings.json"
-    run cp "$SETUP_DOTFILES_DIR/config/claude/settings.json" "$SETUP_HOME/.claude/settings.json"
+    # settings.json: copy (not symlink) so ~/.claude is never a symlink target
+    # inside a git repo, which triggers Claude Code's circular-symlink detection.
+    # Remove any existing symlink before copying (cp fails if src and dst resolve to the same file).
+    # A machine with ~/.claude/settings.host.json builds settings.json with `claude-settings apply`; leave it.
+    if [ ! -e "$SETUP_HOME/.claude/settings.host.json" ]; then
+      run rm -f "$SETUP_HOME/.claude/settings.json"
+      run cp "$SETUP_DOTFILES_DIR/config/claude/settings.json" "$SETUP_HOME/.claude/settings.json"
+    fi
+
+    # commands/agents/skills: real directories with per-entry symlinks inside.
+    # Claude Code only checks top-level ~/.claude/* entries for circular symlinks,
+    # so keeping the directories real avoids the false-positive detection.
+    run rm -rf "$SETUP_HOME/.claude/commands"
+    run mkdir -p "$SETUP_HOME/.claude/commands"
+    for f in "$SETUP_DOTFILES_DIR/config/claude/commands/"*; do
+      [ -e "$f" ] || continue
+      run ln -sf "$f" "$SETUP_HOME/.claude/commands/"
+    done
+
+    run rm -rf "$SETUP_HOME/.claude/agents"
+    run mkdir -p "$SETUP_HOME/.claude/agents"
+    for f in "$SETUP_DOTFILES_DIR/config/claude/agents/"*; do
+      [ -e "$f" ] || continue
+      run ln -sf "$f" "$SETUP_HOME/.claude/agents/"
+    done
+
+    run rm -rf "$SETUP_HOME/.claude/skills"
+    run mkdir -p "$SETUP_HOME/.claude/skills"
+    for f in "$SETUP_DOTFILES_DIR/config/agents/skills/"*; do
+      [ -e "$f" ] || continue
+      run ln -sf "$f" "$SETUP_HOME/.claude/skills/"
+    done
   fi
-
-  # commands/agents/skills: real directories with per-entry symlinks inside.
-  # Claude Code only checks top-level ~/.claude/* entries for circular symlinks,
-  # so keeping the directories real avoids the false-positive detection.
-  run rm -rf "$SETUP_HOME/.claude/commands"
-  run mkdir -p "$SETUP_HOME/.claude/commands"
-  for f in "$SETUP_DOTFILES_DIR/config/claude/commands/"*; do
-    run ln -sf "$f" "$SETUP_HOME/.claude/commands/"
-  done
-
-  run rm -rf "$SETUP_HOME/.claude/agents"
-  run mkdir -p "$SETUP_HOME/.claude/agents"
-  for f in "$SETUP_DOTFILES_DIR/config/claude/agents/"*; do
-    run ln -sf "$f" "$SETUP_HOME/.claude/agents/"
-  done
-
-  run rm -rf "$SETUP_HOME/.claude/skills"
-  run mkdir -p "$SETUP_HOME/.claude/skills"
-  for f in "$SETUP_DOTFILES_DIR/config/agents/skills/"*; do
-    run ln -sf "$f" "$SETUP_HOME/.claude/skills/"
-  done
   install_shared_mcp_servers
   register_claude_mcp arxiv -- /bin/sh -c \
     'PATH=$HOME/.local/bin:/opt/homebrew/bin:$PATH exec uvx arxiv-mcp-server'
@@ -51,11 +57,13 @@ run_claude() {
 
 verify_claude() {
   command -v claude &>/dev/null \
-    && [ "$(readlink "$SETUP_HOME/.claude/CLAUDE.md" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/CLAUDE.md" ] \
     && [ -f "$SETUP_HOME/.claude/settings.json" ] && ! [ -L "$SETUP_HOME/.claude/settings.json" ] \
-    && [ -d "$SETUP_HOME/.claude/commands" ] && ! [ -L "$SETUP_HOME/.claude/commands" ] \
-    && [ -d "$SETUP_HOME/.claude/skills" ] && ! [ -L "$SETUP_HOME/.claude/skills" ] \
-    && [ -d "$SETUP_HOME/.claude/agents" ] && ! [ -L "$SETUP_HOME/.claude/agents" ] \
+    && { hm_active || {
+      [ "$(readlink "$SETUP_HOME/.claude/CLAUDE.md" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/CLAUDE.md" ] \
+        && [ -d "$SETUP_HOME/.claude/commands" ] && ! [ -L "$SETUP_HOME/.claude/commands" ] \
+        && [ -d "$SETUP_HOME/.claude/skills" ] && ! [ -L "$SETUP_HOME/.claude/skills" ] \
+        && [ -d "$SETUP_HOME/.claude/agents" ] && ! [ -L "$SETUP_HOME/.claude/agents" ]
+    }; } \
     && python3 -c "
 import json, sys, glob
 required = {'arxiv', 'github', 'sequential-thinking'}

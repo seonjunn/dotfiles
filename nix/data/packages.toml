@@ -1,0 +1,14 @@
+# Packages installed by Home Manager, read by nix/home/*.nix (data only). Names are nixpkgs attributes.
+# Rule: add a tool here only together with removing its other copies (cargo, ~/bin, /usr/local, apt).
+
+[cli]
+names = ["bat", "eza", "fd", "gh", "gum", "jq", "ripgrep", "yq-go", "nixfmt"]
+
+[dev]  # build tools
+names = ["cmake"]
+
+[editor]
+names = ["vim"]
+
+[runtime]
+names = ["nodejs_24"]

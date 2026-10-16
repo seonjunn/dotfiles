@@ -210,7 +210,10 @@ def apply_theme(target_theme, config, force=False):
         if theme_file.exists():
             target_current = kitty_dir / "current-theme.conf"
             try:
-                shutil.copyfile(theme_file, target_current)
+                # a link to the theme, not a copy: the theme files themselves can be read-only (Home Manager)
+                if target_current.is_symlink() or target_current.exists():
+                    target_current.unlink()
+                target_current.symlink_to(Path("themes") / theme_file.name)
                 # Send SIGUSR1 to reload kitty config
                 subprocess.run(["killall", "-SIGUSR1", "kitty"], check=False, stderr=subprocess.DEVNULL)
             except Exception as e:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Claude Code status line, shared by every machine.
 
-model (effort) | user@host:cwd (branch) | account | ctx 82%/1M | cache 12m [| UNATTENDED]
+model (effort) | user@host:cwd (branch) | account | ctx 82%/1M | cache 12m05s [| UNATTENDED]
 
 Input is the JSON Claude Code passes on stdin. Never prints tokens or secrets:
 the account is read from the oauthAccount.emailAddress field only.
@@ -124,8 +124,9 @@ def main():
             exp = None
         left = exp - time.time() if exp else None
         if pc.get("warm") and left and left > 0:
-            mins = int(left // 60)
-            t = f"{mins // 60}h{mins % 60}m" if mins >= 60 else f"{mins}m"
+            secs = int(left)
+            mins = secs // 60
+            t = f"{mins // 60}h{mins % 60:02d}m" if mins >= 60 else f"{mins}m{secs % 60:02d}s"
             parts.append(f"{Y if left < 300 else GR}cache {t}{N}")
         else:
             parts.append(f"{R}cache {'expired' if pc.get('warm') else 'cold'}{N}")

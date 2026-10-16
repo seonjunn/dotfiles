@@ -1,0 +1,15 @@
+#!/bin/sh
+# dunst script hook: logs every notification (for notif-jump) and plays a sound.
+# env: DUNST_ID DUNST_APP_NAME DUNST_SUMMARY DUNST_BODY DUNST_URGENCY
+LOG="${XDG_RUNTIME_DIR:-/tmp}/notif-log.tsv"
+clean() { printf '%s' "$1" | tr '\t\n' '  ' | cut -c1-200; }
+printf '%s\t%s\t%s\t%s\t%s\n' "$DUNST_ID" "$(date +%s)" "$(clean "$DUNST_APP_NAME")" "$(clean "$DUNST_SUMMARY")" "$(clean "$DUNST_BODY")" >> "$LOG"
+tail -n 200 "$LOG" > "$LOG.tmp" && mv "$LOG.tmp" "$LOG"
+
+S=/usr/share/sounds/freedesktop/stereo
+case "$DUNST_URGENCY" in
+  LOW) exit 0 ;;
+  CRITICAL) f=$S/dialog-warning.oga ;;
+  *) f=$S/message.oga ;;
+esac
+exec paplay "$f"

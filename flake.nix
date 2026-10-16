@@ -16,6 +16,8 @@
     # Machine-agnostic modules. A machine's own config can import these and add its specifics.
     homeModules = {
       base = ./nix/home/base.nix;
+      # opt-in: i3 desktop configs and scripts (Linux)
+      desktop = ./nix/home/desktop.nix;
       # opt-in: Android device tools (adb, fastboot, adb-shell); not part of base
       android = import ./nix/home/android.nix { inherit adb-shell; };
     };

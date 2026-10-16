@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+disable_screen() {
+    echo "Disabling screen blanking and DPMS..."
+    xset s off
+    xset -dpms
+    xset s noblank
+}
+
+restore_screen() {
+    echo "Restoring screen blanking and DPMS..."
+    xset s on
+    xset +dpms
+    xset s blank
+}
+
+# MAIN
+disable_screen
+echo "Screen will stay on. Press ENTER to restore settings."
+read -r
+restore_screen
+echo "Done."
+

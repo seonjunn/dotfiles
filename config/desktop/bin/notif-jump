@@ -1,0 +1,52 @@
+#!/bin/sh
+# Pick a recent notification with rofi and jump to the app that sent it.
+LOG="${XDG_RUNTIME_DIR:-/tmp}/notif-log.tsv"
+
+if [ ! -s "$LOG" ]; then
+  echo "(no recent notifications)" | rofi -normal-window -dmenu -p notif -no-custom >/dev/null
+  exit 0
+fi
+
+# per-app accent color + icon (same palette as the dunst frame colors)
+style() {
+  case "$1" in
+    Slack)   echo "#36C5F0 slack" ;;
+    Discord) echo "#5865F2 discord" ;;
+    Orca)    echo "#a6e3a1 $HOME/.local/share/icons/hicolor/512x512/apps/orca-ide.png" ;;
+    Claude)  echo "#D97757 claude-desktop" ;;
+    kitty)   echo "#f9e2af utilities-terminal" ;;
+    *)       echo "#89b4fa dialog-information" ;;
+  esac
+}
+esc() { printf '%s' "$1" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'; }
+
+now=$(date +%s)
+tac "$LOG" | head -n 40 > "$LOG.view"
+rows=""
+while IFS="$(printf '\t')" read -r id ts app summary body; do
+  set -- $(style "$app"); color=$1; icon=$2
+  age=$((now - ts))
+  if [ $age -lt 60 ]; then t="${age}s"; elif [ $age -lt 3600 ]; then t="$((age/60))m"; else t="$((age/3600))h"; fi
+  pad=$(printf '%-9.9s' "$app")
+  printf '%4s  <span foreground="%s"><b>%s</b></span>  %s  <span alpha="60%%">— %s</span>\0icon\037%s\n' \
+    "$t" "$color" "$(esc "$pad")" "$(esc "$summary")" "$(esc "$body")" "$icon"
+done < "$LOG.view" > "$LOG.rows"
+
+sel=$(rofi -normal-window -dmenu -i -markup-rows -show-icons -p notif -format i -no-custom \
+  -theme-str 'window {width: 60%;} element-text {font: "DejaVu Sans Mono 10";}' < "$LOG.rows")
+[ -n "$sel" ] || exit 0
+
+line=$(sed -n "$((sel+1))p" "$LOG.view")
+id=${line%%	*}
+app=$(printf '%s' "$line" | cut -f3)
+
+case "$app" in
+  Claude) crit='class="com.anthropic.Claude"' ;;
+  ''|notify-send) crit='' ;;
+  *) crit="class=\"(?i)^${app}\$\"" ;;
+esac
+[ -n "$crit" ] && i3-msg "[$crit] focus" >/dev/null
+
+# dismiss it if still showing, and drop it from the list
+busctl --user call org.freedesktop.Notifications /org/freedesktop/Notifications org.freedesktop.Notifications CloseNotification u "$id" >/dev/null 2>&1
+awk -F"\t" -v id="$id" '$1!=id' "$LOG" > "$LOG.tmp" && mv "$LOG.tmp" "$LOG"

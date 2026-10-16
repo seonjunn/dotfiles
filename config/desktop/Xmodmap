@@ -1,0 +1,23 @@
+! Right Alt (keycode 108) is the Hangul toggle for fcitx5 (TriggerKeys=Hangul).
+! It must also be bound to NO modifier -- if it stays in mod1 it still behaves
+! as Alt and swallows every keystroke typed while it is held.
+!
+! Left Alt (keycode 64, next to space) and the small outer key (keycode 133)
+! are swapped: the key next to space is Super ($mod in i3, Mac-Cmd-like), the
+! outer one is Alt.
+!
+! mod1/mod4 are rebuilt from scratch rather than using `remove`:
+!   - `remove` matches by keysym, so once a keycode line below has taken
+!     effect it silently stops matching, leaving the key bound to the old
+!     modifier -- broken, yet containing nothing to grep for.
+!   - once no key carries a keysym at all, `remove` is a hard error that
+!     aborts the rest of this file.
+! `clear` + `add` of keysyms that always exist is order-independent and cannot
+! fail.
+keycode 108 = Hangul
+keycode  64 = Super_L
+keycode 133 = Alt_L Meta_L
+clear mod1
+clear mod4
+add mod1 = Alt_L Meta_L
+add mod4 = Super_L Super_R Hyper_L

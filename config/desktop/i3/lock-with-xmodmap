@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+set -eu
+
+log_dir="$HOME/.local/state"
+log_file="$log_dir/xmodmap-lock.log"
+
+mkdir -p "$log_dir"
+
+log() {
+    printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S%z')" "$*" >> "$log_file"
+}
+
+log "lock-start"
+i3lock -c 222222 --nofork
+log "unlock-detected"
+
+# Reapply the keymap after unlock/resume. On some wake paths X is not ready
+# immediately, so retry a few times instead of requiring a manual xmodmap.
+for _ in 1 2 3 4 5; do
+    if xmodmap "$HOME/.Xmodmap"; then
+        mods="$(xmodmap -pm | tr '\n' ' ' | sed 's/  */ /g')"
+        keys="$(xmodmap -pke | rg '^keycode +(64|108|130|131) =' | tr '\n' ' ' | sed 's/  */ /g')"
+        xkb="$(setxkbmap -query | tr '\n' ' ' | sed 's/  */ /g')"
+        log "xmodmap-reapplied mods=\"$mods\" keys=\"$keys\" xkb=\"$xkb\""
+        exit 0
+    fi
+    log "xmodmap-retry"
+    sleep 0.2
+done
+
+log "xmodmap-failed"
+exit 1

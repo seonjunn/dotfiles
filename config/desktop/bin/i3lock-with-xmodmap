@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+i3lock -c 222222 --nofork
+xmodmap "$HOME/.Xmodmap"

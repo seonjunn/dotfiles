@@ -1,12 +1,14 @@
 # fish aliases and abbreviations, read by nix/home/fish.nix (data only).
 
+# Aliases become fish functions, so fish's own code and scripts that call the command get them too
+# (e.g. fish's completion setup printed "mkdir: created directory"). Prefer abbrs: they expand only when typed.
 [aliases]
+
+[abbrs]
 mv = "mv -iv"
 cp = "cp -riv"
 rm = "rm -Iv"
 mkdir = "mkdir -vp"
-
-[abbrs]
 dotsetup = "$HOME/.dotfiles/setup.sh"
 sfish = "source $HOME/.config/fish/config.fish"
 ga = "git add"

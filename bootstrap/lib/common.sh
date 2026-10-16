@@ -43,7 +43,8 @@ setup_init_env() {
 
   [ -d "$SETUP_HOME/.local/bin" ] && export PATH="$SETUP_HOME/.local/bin:$PATH"
   NVM_DIR="${NVM_DIR:-$SETUP_HOME/.nvm}"
-  if [ -s "$NVM_DIR/nvm.sh" ]; then
+  # Home Manager machines get node from Nix and set NPM_CONFIG_PREFIX, which nvm refuses (exit 11)
+  if [ -s "$NVM_DIR/nvm.sh" ] && ! hm_active; then
     . "$NVM_DIR/nvm.sh"
     export NVM_DIR
   fi

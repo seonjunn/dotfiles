@@ -40,16 +40,13 @@ set -gx TERM xterm-256color
 set -gx LANG en_US.UTF-8
 set -gx LC_ALL en_US.UTF-8
 
-# Alias
-
-alias mv	"mv -iv"
-alias cp	"cp -riv"
-alias rm	"rm -Iv"
-alias mkdir	"mkdir -vp"
-
-
 # Abbreviation
+# mv/cp/rm/mkdir are abbrs, not aliases: an alias is a function, so fish's own code and scripts would get -v/-i too.
 
+abbr -a mv	"mv -iv"
+abbr -a cp	"cp -riv"
+abbr -a rm	"rm -Iv"
+abbr -a mkdir	"mkdir -vp"
 abbr -a dotsetup	"$HOME/.dotfiles/setup.sh"
 abbr -a sfish	"source $HOME/.config/fish/config.fish"
 abbr -a vfish	"vim $HOME/.config/fish/config.fish"

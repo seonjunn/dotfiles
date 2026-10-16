@@ -1,0 +1,14 @@
+[Hotkey]
+# Enumerate when press trigger key repeatedly
+EnumerateWithTriggerKeys=True
+# Enumerate Input Method Forward
+EnumerateForwardKeys=
+# Enumerate Input Method Backward
+EnumerateBackwardKeys=
+# Skip first input method while enumerating
+EnumerateSkipFirst=False
+
+[Hotkey/TriggerKeys]
+0=Hangul
+
+[Hotkey/AltTriggerKeys]

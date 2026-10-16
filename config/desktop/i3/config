@@ -80,7 +80,8 @@ exec_always --no-startup-id ~/.local/bin/notif-log-reaper
 exec_always --no-startup-id pgrep -x picom || picom -b
 
 # flashfocus
-exec_always --no-startup-id pgrep -x flashfocus || flashfocus
+# Nix runs it as .flashfocus-wrapped, so match the command line, not the process name
+exec_always --no-startup-id pgrep -f 'bin/\.?flashfocus' >/dev/null || flashfocus
 #bindsym $mod+n exec --no-startup-id flash_window
 
 # move tiling windows via drag & drop by left-clicking into the title bar,
@@ -468,7 +469,7 @@ bar {
     binding_mode_indicator yes
     font pango:DejaVu Sans Mono, FontAwesome 6 Free 12
     position top
-    status_command ~/.cargo/bin/i3status-rs ~/.config/i3status-rs/config.toml
+    status_command ~/.nix-profile/bin/i3status-rs ~/.config/i3status-rs/config.toml
     colors {
         separator #666666
         background #222222

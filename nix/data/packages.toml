@@ -11,7 +11,7 @@ names = ["cmake"]
 names = ["android-tools"]  # adb, fastboot
 
 [editor]
-names = ["vim"]
+names = ["vim", "neovim"]  # neovim: binary only for now; config and EDITOR switch come later
 
 [runtime]
 names = ["nodejs_24"]

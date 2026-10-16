@@ -1,0 +1,120 @@
+#!/usr/bin/env python3
+"""Two small i3 helpers.
+
+1) New windows of apps in PIN_TO_CURRENT (Brave restores a random old desktop on
+   start) are moved to the workspace that was focused when they were launched.
+
+2) Jump straight to a browser window that raises an urgency hint (e.g. a link
+opened from another app) instead of just marking its workspace red.
+Only browsers are handled: chat apps set urgency on every message and must not
+steal focus."""
+import fcntl, json, os, re, subprocess, sys, time
+
+PIN_TO_CURRENT = re.compile(r"^brave-browser$", re.I)
+MEDIA = re.compile(r"^(firefox|brave-browser|google-chrome|chromium|vlc|mpv)$", re.I)
+UNFOCUSED, FOCUSED = 0.97, 1.0       # focused = opaque, except TRANSLUCENT apps below
+# terminal + Orca stay clearly translucent even when focused: class -> (focused, unfocused)
+TRANSLUCENT = {"kitty": (0.92, 0.90), "orca": (0.92, 0.90)}
+MANAGE_OPACITY = False   # off: flashfocus alone owns opacity (two writers made focus changes look jumpy)
+NO_OPACITY = re.compile(r"^(rofi|i3bar)$", re.I)
+BROWSERS = re.compile(r"^(firefox|brave-browser|google-chrome|chromium|librewolf)$", re.I)
+
+lock = open(os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "i3-focus-urgent.lock"), "w")
+try:
+    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+except OSError:
+    sys.exit(0)
+
+def set_opacity(win, value):
+    if win and MANAGE_OPACITY:
+        subprocess.run(["xprop", "-id", str(win), "-f", "_NET_WM_WINDOW_OPACITY", "32c",
+                        "-set", "_NET_WM_WINDOW_OPACITY", str(int(value * 0xFFFFFFFF))],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def focused_opacity(cls):
+    if (cls or "").lower() in TRANSLUCENT:
+        return TRANSLUCENT[cls.lower()][0]
+    return 1.0 if MEDIA.match(cls or "") else FOCUSED
+
+def unfocused_opacity(cls):
+    if (cls or "").lower() in TRANSLUCENT:
+        return TRANSLUCENT[cls.lower()][1]
+    return UNFOCUSED
+
+def i3(cmd):
+    return subprocess.run(["i3-msg", cmd], stdout=subprocess.DEVNULL)
+
+def workspace_of(con_id):
+    tree = json.loads(subprocess.run(["i3-msg", "-t", "get_tree"], capture_output=True, text=True).stdout)
+    def walk(n, ws=None):
+        if n.get("type") == "workspace":
+            ws = n["name"]
+        if n.get("id") == con_id:
+            return ws
+        for c in n.get("nodes", []) + n.get("floating_nodes", []):
+            r = walk(c, ws)
+            if r:
+                return r
+    return walk(tree)
+
+def focused_ws():
+    out = subprocess.run(["i3-msg", "-t", "get_workspaces"], capture_output=True, text=True).stdout
+    return next((w["name"] for w in json.loads(out) if w["focused"]), None)
+
+cur_ws, prev_ws = focused_ws(), None
+focus_win = focus_cls = None
+threading = __import__("threading")
+def initial_opacity():
+    global focus_win
+    tree = json.loads(subprocess.run(["i3-msg", "-t", "get_tree"], capture_output=True, text=True).stdout)
+    def walk(n):
+        if n.get("window"):
+            cls = (n.get("window_properties") or {}).get("class", "")
+            if not NO_OPACITY.match(cls):
+                if n.get("focused"):
+                    globals()["focus_win"] = n["window"]; set_opacity(n["window"], focused_opacity(cls))
+                else:
+                    set_opacity(n["window"], unfocused_opacity(cls))
+        for c in n.get("nodes", []) + n.get("floating_nodes", []):
+            walk(c)
+    walk(tree)
+
+if MANAGE_OPACITY:
+    initial_opacity()
+
+while True:  # i3 drops IPC subscribers on reload/restart: resubscribe
+    proc = subprocess.Popen(["stdbuf", "-oL", "i3-msg", "-t", "subscribe", "-m", '["window","workspace"]'],
+                            stdout=subprocess.PIPE, text=True)
+    for line in proc.stdout:
+        try:
+            ev = json.loads(line)
+        except ValueError:
+            continue
+        change = ev.get("change")
+        if "current" in ev and change == "focus":      # workspace::focus
+            name = (ev.get("current") or {}).get("name")
+            if name != cur_ws:
+                prev_ws, cur_ws = cur_ws, name
+            continue
+        con = ev.get("container") or {}
+        cls = (con.get("window_properties") or {}).get("class", "")
+        if change == "new" and PIN_TO_CURRENT.match(cls):
+            time.sleep(0.15)                            # let i3 finish placing it
+            where = workspace_of(con["id"])
+            target = cur_ws if where != cur_ws else prev_ws
+            if where and target and where != target:
+                i3(f'[con_id={con["id"]}] move to workspace "{target}"')
+                i3(f'workspace "{target}"')
+                i3(f'[con_id={con["id"]}] focus')
+        elif change in ("focus", "new") and con.get("window") and not NO_OPACITY.match(cls):
+            win = con["window"]
+            if change == "focus":
+                if focus_win and focus_win != win:
+                    set_opacity(focus_win, unfocused_opacity(focus_cls))
+                focus_win, focus_cls = win, cls
+                set_opacity(win, focused_opacity(cls))
+            else:
+                set_opacity(win, unfocused_opacity(cls))
+        elif change == "urgent" and con.get("urgent") and BROWSERS.match(cls):
+            i3(f'[con_id={con["id"]}] focus')
+    time.sleep(1)

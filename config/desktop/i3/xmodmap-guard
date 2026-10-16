@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+
+# Keeps ~/.Xmodmap applied: right Alt (keycode 108) carries the Hangul keysym
+# for fcitx5 and is bound to no modifier. Something in the session resets this
+# every few hours, which breaks the fcitx5 Hangul toggle until it is reapplied.
+#
+# Note: deliberately NOT `set -e`. A transient failure (X not ready during
+# lock/suspend/resume) used to abort the whole script, silently killing the
+# guard for good and leaving the mapping broken until the next i3 restart.
+set -u
+
+log_dir="$HOME/.local/state"
+log_file="$log_dir/xmodmap-guard.log"
+lock_file="$log_dir/xmodmap-guard.lock"
+log_max_bytes=$((1024 * 1024))
+
+mkdir -p "$log_dir"
+
+log() {
+    printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S%z')" "$*" >> "$log_file"
+}
+
+rotate_log_if_large() {
+    local size
+    size="$(stat -c '%s' "$log_file" 2>/dev/null || echo 0)"
+    if [ "$size" -gt "$log_max_bytes" ]; then
+        mv -f "$log_file" "$log_file.1"
+        log "log-rotated previous=$size bytes"
+    fi
+}
+
+log_suspect_processes() {
+    suspects="$(ps -ef | rg 'kime|ibus|fcitx|setxkbmap|xmodmap|xss-lock' | tr '\n' '|' | sed 's/|$//' || true)"
+    log "suspect-procs=\"$suspects\""
+}
+
+# Checks the actual invariant rather than grepping for the string "Alt_R".
+# Right Alt can be reset into mod1 while ALREADY carrying the Hangul keysym --
+# broken (it still acts as Alt and swallows keystrokes) but containing no
+# "Alt_R" anywhere, so a string check sees nothing wrong and never reapplies.
+# Returns: 0 = needs reapply, 1 = healthy, 2 = X unreachable.
+needs_reapply() {
+    local keymap mods
+    keymap="$(xmodmap -pke 2>/dev/null)" || return 2
+    mods="$(xmodmap -pm 2>/dev/null)" || return 2
+    [ -n "$keymap" ] && [ -n "$mods" ] || return 2
+
+    printf '%s\n' "$keymap" | grep -qE '^keycode +108 = Hangul' || return 0
+    printf '%s\n' "$keymap" | grep -qE '^keycode +64 = Super_L' || return 0
+    printf '%s\n' "$mods" | grep -q '0x6c' && return 0
+    return 1
+}
+
+apply_if_needed() {
+    needs_reapply
+    case "$?" in
+        1) return 0 ;;
+        # A hard failure means the X server is gone (logout). Exit rather than
+        # spin forever holding the lock against the next session's guard.
+        2) log "x-unreachable exiting pid=$$"; exit 0 ;;
+    esac
+
+    before_mods="$(xmodmap -pm 2>/dev/null | tr '\n' ' ' | sed 's/  */ /g')"
+    before_keymap="$(xmodmap -pke 2>/dev/null | rg '^keycode +(64|108|130|131) =' | tr '\n' ' ' | sed 's/  */ /g')"
+    before_xkb="$(setxkbmap -query 2>/dev/null | tr '\n' ' ' | sed 's/  */ /g')"
+    log "detected-reset before_mods=\"$before_mods\" before_keys=\"$before_keymap\" before_xkb=\"$before_xkb\""
+    log_suspect_processes
+
+    if ! xmodmap "$HOME/.Xmodmap" 2>>"$log_file"; then
+        log "apply-failed retrying-next-tick"
+        return 0
+    fi
+
+    # Verify rather than assume: a reapply that leaves the invariant broken is
+    # how this went unnoticed for days last time.
+    if needs_reapply; then
+        log "apply-INEFFECTIVE forcing-modifier-clear"
+        xmodmap -e 'clear mod1' -e 'add mod1 = Alt_L Meta_L' 2>>"$log_file"
+    fi
+
+    after_mods="$(xmodmap -pm 2>/dev/null | tr '\n' ' ' | sed 's/  */ /g')"
+    after_keymap="$(xmodmap -pke 2>/dev/null | rg '^keycode +(64|108|130|131) =' | tr '\n' ' ' | sed 's/  */ /g')"
+    if needs_reapply; then
+        log "STILL-BROKEN after_mods=\"$after_mods\" after_keys=\"$after_keymap\""
+    else
+        log "reapplied-xmodmap after_mods=\"$after_mods\" after_keys=\"$after_keymap\""
+    fi
+}
+
+# Single instance only: i3's exec_always fires again on every reload.
+exec 9>"$lock_file"
+if ! flock -n 9; then
+    exit 0
+fi
+
+log "guard-start pid=$$"
+rotate_log_if_large
+apply_if_needed
+
+while :; do
+    sleep 5 || true
+    apply_if_needed
+done

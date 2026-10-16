@@ -1,0 +1,361 @@
+#!/usr/bin/env python3
+"""
+theme-switcher: Automated and manual light/dark theme switcher for Linux / i3wm
+Works with FreeDesktop xdg-desktop-portal, GNOME/GTK, Kitty terminal, and custom hooks.
+"""
+
+import sys
+import os
+import json
+import math
+import datetime
+import subprocess
+import shutil
+import argparse
+from pathlib import Path
+
+CONFIG_DIR = Path.home() / ".config" / "theme-switcher"
+CONFIG_FILE = CONFIG_DIR / "config.json"
+STATE_FILE = CONFIG_DIR / "state.json"
+HOOKS_DIR = CONFIG_DIR / "hooks.d"
+
+DEFAULT_CONFIG = {
+    "mode": "solar",
+    "coordinates": {
+        "latitude": 37.5665,
+        "longitude": 126.9780,
+        "description": "Seoul, South Korea"
+    },
+    "schedule": {
+        "light_start": "06:30",
+        "dark_start": "18:30"
+    },
+    "themes": {
+        "dark": {
+            "color_scheme": "prefer-dark",
+            "gtk_theme": "Yaru-dark",
+            "kitty_theme": "Catppuccin-Mocha"
+        },
+        "light": {
+            "color_scheme": "prefer-light",
+            "gtk_theme": "Yaru",
+            "kitty_theme": "Catppuccin-Latte"
+        }
+    },
+    "integrations": {
+        "gsettings": True,
+        "gtk_settings_ini": True,
+        "kitty": True
+    },
+    "hooks": {
+        "on_dark": "",
+        "on_light": ""
+    }
+}
+
+def load_config():
+    if not CONFIG_FILE.exists():
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(DEFAULT_CONFIG, f, indent=2)
+        return DEFAULT_CONFIG
+    try:
+        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+            # merge default keys if missing
+            for k, v in DEFAULT_CONFIG.items():
+                if k not in cfg:
+                    cfg[k] = v
+            return cfg
+    except Exception as e:
+        print(f"Warning: Failed to parse config file: {e}. Using defaults.", file=sys.stderr)
+        return DEFAULT_CONFIG
+
+def load_state():
+    if STATE_FILE.exists():
+        try:
+            with open(STATE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"current": None, "last_updated": None}
+
+def save_state(current_theme):
+    try:
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        with open(STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump({
+                "current": current_theme,
+                "last_updated": datetime.datetime.now().isoformat()
+            }, f, indent=2)
+    except Exception as e:
+        print(f"Warning: Failed to save state: {e}", file=sys.stderr)
+
+def calculate_solar_times(lat, lon, date=None):
+    if date is None:
+        date = datetime.date.today()
+    N = date.timetuple().tm_yday
+    lng_hour = lon / 15.0
+
+    results = {}
+    for is_rise in (True, False):
+        offset = 6.0 if is_rise else 18.0
+        t = N + ((offset - lng_hour) / 24.0)
+        M = (0.9856 * t) - 3.289
+        L = (M + (1.916 * math.sin(math.radians(M))) + (0.020 * math.sin(math.radians(2 * M))) + 282.634) % 360
+        RA = math.degrees(math.atan(0.91764 * math.tan(math.radians(L)))) % 360
+        Lquadrant = math.floor(L / 90.0) * 90.0
+        RAquadrant = math.floor(RA / 90.0) * 90.0
+        RA = (RA + (Lquadrant - RAquadrant)) / 15.0
+
+        sinDec = 0.39782 * math.sin(math.radians(L))
+        cosDec = math.cos(math.asin(sinDec))
+
+        cosH = (math.cos(math.radians(90.833)) - (sinDec * math.sin(math.radians(lat)))) / (cosDec * math.cos(math.radians(lat)))
+        if cosH > 1.0 or cosH < -1.0:
+            return None, None
+
+        H = (360.0 - math.degrees(math.acos(cosH))) if is_rise else math.degrees(math.acos(cosH))
+        H = H / 15.0
+        T = H + RA - (0.06571 * t) - 6.622
+        UT = (T - lng_hour) % 24.0
+        results['rise' if is_rise else 'set'] = UT
+
+    now_local = datetime.datetime.now().astimezone()
+    tz_offset_hours = now_local.utcoffset().total_seconds() / 3600.0
+
+    local_rise_h = (results['rise'] + tz_offset_hours) % 24.0
+    local_set_h = (results['set'] + tz_offset_hours) % 24.0
+
+    t_rise = datetime.time(int(local_rise_h), int((local_rise_h % 1) * 60))
+    t_set = datetime.time(int(local_set_h), int((local_set_h % 1) * 60))
+    return t_rise, t_set
+
+def get_target_theme(config):
+    mode = config.get("mode", "solar")
+    now = datetime.datetime.now().time()
+    
+    if mode == "solar":
+        coords = config.get("coordinates", {})
+        lat = coords.get("latitude", 37.5665)
+        lon = coords.get("longitude", 126.9780)
+        t_rise, t_set = calculate_solar_times(lat, lon)
+        if t_rise and t_set:
+            if t_rise <= t_set:
+                is_light = (t_rise <= now < t_set)
+            else:
+                is_light = not (t_set <= now < t_rise)
+            return "light" if is_light else "dark", {"sunrise": t_rise.strftime("%H:%M"), "sunset": t_set.strftime("%H:%M")}
+    
+    # Schedule fallback or explicit schedule mode
+    sched = config.get("schedule", {})
+    l_str = sched.get("light_start", "06:30")
+    d_str = sched.get("dark_start", "18:30")
+    now_str = now.strftime("%H:%M")
+    if l_str <= d_str:
+        is_light = (l_str <= now_str < d_str)
+    else:
+        is_light = not (d_str <= now_str < l_str)
+    return "light" if is_light else "dark", {"light_start": l_str, "dark_start": d_str}
+
+def apply_theme(target_theme, config, force=False):
+    state = load_state()
+    if not force and state.get("current") == target_theme:
+        # Already set
+        return False
+
+    theme_conf = config.get("themes", {}).get(target_theme, {})
+    color_scheme = theme_conf.get("color_scheme", "prefer-dark" if target_theme == "dark" else "prefer-light")
+    gtk_theme = theme_conf.get("gtk_theme", "Yaru-dark" if target_theme == "dark" else "Yaru")
+    kitty_theme = theme_conf.get("kitty_theme")
+
+    integrations = config.get("integrations", {})
+
+    # 1. gsettings (GNOME interface & triggers xdg-desktop-portal)
+    if integrations.get("gsettings", True):
+        try:
+            subprocess.run(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", color_scheme], check=False)
+            subprocess.run(["gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", gtk_theme], check=False)
+        except Exception as e:
+            print(f"Warning: gsettings error: {e}", file=sys.stderr)
+
+    # 2. GTK INI files
+    if integrations.get("gtk_settings_ini", True):
+        is_dark = (target_theme == "dark")
+        ini_content = f"[Settings]\ngtk-theme-name={gtk_theme}\ngtk-application-prefer-dark-theme={'1' if is_dark else '0'}\n"
+        for ver in ["gtk-3.0", "gtk-4.0"]:
+            ini_file = Path.home() / ".config" / ver / "settings.ini"
+            try:
+                ini_file.parent.mkdir(parents=True, exist_ok=True)
+                ini_file.write_text(ini_content)
+            except Exception as e:
+                print(f"Warning: Failed to write {ini_file}: {e}", file=sys.stderr)
+
+    # 3. Kitty terminal
+    if integrations.get("kitty", True) and kitty_theme:
+        kitty_dir = Path.home() / ".config" / "kitty"
+        themes_dir = kitty_dir / "themes"
+        theme_file = themes_dir / f"{kitty_theme}.conf"
+        
+        # If theme file doesn't exist, try dumping it using kitty kitten themes
+        if not theme_file.exists() and shutil.which("kitty"):
+            try:
+                themes_dir.mkdir(parents=True, exist_ok=True)
+                res = subprocess.run(["kitty", "+kitten", "themes", "--dump-theme", kitty_theme], capture_output=True, text=True)
+                if res.returncode == 0 and res.stdout:
+                    theme_file.write_text(res.stdout)
+            except Exception:
+                pass
+
+        if theme_file.exists():
+            target_current = kitty_dir / "current-theme.conf"
+            try:
+                shutil.copyfile(theme_file, target_current)
+                # Send SIGUSR1 to reload kitty config
+                subprocess.run(["killall", "-SIGUSR1", "kitty"], check=False, stderr=subprocess.DEVNULL)
+            except Exception as e:
+                print(f"Warning: Failed updating kitty theme: {e}", file=sys.stderr)
+
+    # 4. Custom hook command
+    hook_cmd = config.get("hooks", {}).get(f"on_{target_theme}")
+    if hook_cmd:
+        try:
+            subprocess.run(hook_cmd, shell=True, check=False)
+        except Exception as e:
+            print(f"Warning: Hook error: {e}", file=sys.stderr)
+
+    # 5. Hook directory scripts
+    if HOOKS_DIR.is_dir():
+        for script in sorted(HOOKS_DIR.iterdir()):
+            if script.is_file() and os.access(script, os.X_OK):
+                try:
+                    subprocess.run([str(script), target_theme], check=False)
+                except Exception as e:
+                    print(f"Warning: Hook {script.name} error: {e}", file=sys.stderr)
+
+    save_state(target_theme)
+    return True
+
+def cmd_auto(args, config):
+    target, info = get_target_theme(config)
+    changed = apply_theme(target, config, force=args.force)
+    if changed:
+        print(f"Theme switched to: {target} ({info})")
+    else:
+        if args.verbose:
+            print(f"Theme already at {target} ({info})")
+
+def cmd_set(args, config):
+    target = args.theme
+    apply_theme(target, config, force=True)
+    print(f"Theme set to: {target}")
+
+def cmd_toggle(args, config):
+    state = load_state()
+    current = state.get("current")
+    if not current:
+        try:
+            res = subprocess.run(["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"], capture_output=True, text=True)
+            current = "dark" if "dark" in res.stdout else "light"
+        except Exception:
+            current = "dark"
+    new_theme = "light" if current == "dark" else "dark"
+    apply_theme(new_theme, config, force=True)
+    print(f"Toggled theme: {current} -> {new_theme}")
+
+def cmd_status(args, config):
+    state = load_state()
+    target, info = get_target_theme(config)
+    
+    # Check portal color-scheme
+    portal_val = "Unknown"
+    try:
+        res = subprocess.run([
+            "gdbus", "call", "--session", "--dest", "org.freedesktop.portal.Desktop",
+            "--object-path", "/org/freedesktop/portal/desktop",
+            "--method", "org.freedesktop.portal.Settings.Read",
+            "org.freedesktop.appearance", "color-scheme"
+        ], capture_output=True, text=True)
+        if "uint32 1" in res.stdout:
+            portal_val = "1 (prefer-dark)"
+        elif "uint32 2" in res.stdout:
+            portal_val = "2 (prefer-light)"
+        elif "uint32 0" in res.stdout:
+            portal_val = "0 (default / no-preference)"
+        else:
+            portal_val = res.stdout.strip()
+    except Exception as e:
+        portal_val = f"Error: {e}"
+
+    # Check gsettings
+    gsettings_scheme = "Unknown"
+    gsettings_theme = "Unknown"
+    try:
+        res1 = subprocess.run(["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"], capture_output=True, text=True)
+        gsettings_scheme = res1.stdout.strip().strip("'")
+        res2 = subprocess.run(["gsettings", "get", "org.gnome.desktop.interface", "gtk-theme"], capture_output=True, text=True)
+        gsettings_theme = res2.stdout.strip().strip("'")
+    except Exception:
+        pass
+
+    now = datetime.datetime.now()
+    print("=== theme-switcher status ===")
+    print(f"Current local time:        {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Active recorded theme:     {state.get('current', 'None')}")
+    print(f"Target theme for this hour: {target}")
+    print(f"Configured mode:           {config.get('mode', 'solar')}")
+    if config.get("mode") == "solar":
+        print(f"Coordinates:               {config.get('coordinates', {}).get('description', '')} ({config.get('coordinates', {}).get('latitude')}, {config.get('coordinates', {}).get('longitude')})")
+        print(f"Sunrise today:             {info.get('sunrise', 'N/A')}")
+        print(f"Sunset today:              {info.get('sunset', 'N/A')}")
+    else:
+        print(f"Light starts at:           {info.get('light_start', 'N/A')}")
+        print(f"Dark starts at:            {info.get('dark_start', 'N/A')}")
+    print("--- System Integration Status ---")
+    print(f"Portal color-scheme:       {portal_val}")
+    print(f"GSettings color-scheme:    {gsettings_scheme}")
+    print(f"GSettings gtk-theme:       {gsettings_theme}")
+
+def main():
+    parser = argparse.ArgumentParser(description="Linux / i3 light and dark theme switcher")
+    subparsers = parser.add_subparsers(dest="subcommand")
+
+    auto_p = subparsers.add_parser("auto", help="Automatically switch theme based on time")
+    auto_p.add_argument("-f", "--force", action="store_true", help="Force re-apply even if state has not changed")
+    auto_p.add_argument("-v", "--verbose", action="store_true", help="Print details even when unchanged")
+
+    set_p = subparsers.add_parser("set", help="Manually set theme (light or dark)")
+    set_p.add_argument("theme", choices=["light", "dark"], help="Theme to set")
+
+    subparsers.add_parser("light", help="Shortcut to set light theme")
+    subparsers.add_parser("dark", help="Shortcut to set dark theme")
+    subparsers.add_parser("toggle", help="Toggle between light and dark themes")
+    subparsers.add_parser("status", help="Show current status and schedule")
+
+    args = parser.parse_args()
+    config = load_config()
+
+    if args.subcommand == "auto" or args.subcommand is None:
+        if args.subcommand is None:
+            # default action is auto
+            class DummyArgs:
+                force = False
+                verbose = False
+            cmd_auto(DummyArgs(), config)
+        else:
+            cmd_auto(args, config)
+    elif args.subcommand == "set":
+        cmd_set(args, config)
+    elif args.subcommand == "light":
+        args.theme = "light"
+        cmd_set(args, config)
+    elif args.subcommand == "dark":
+        args.theme = "dark"
+        cmd_set(args, config)
+    elif args.subcommand == "toggle":
+        cmd_toggle(args, config)
+    elif args.subcommand == "status":
+        cmd_status(args, config)
+
+if __name__ == "__main__":
+    main()

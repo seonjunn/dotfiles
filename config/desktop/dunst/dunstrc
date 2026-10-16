@@ -1,0 +1,82 @@
+[global]
+    monitor = 0
+    follow = mouse
+    width = 360
+    height = 300
+    origin = top-right
+    offset = 16x48
+    notification_limit = 8
+    gap_size = 8
+    padding = 14
+    horizontal_padding = 16
+    frame_width = 2
+    corner_radius = 12
+    separator_height = 0
+    font = Noto Sans 11
+    markup = full
+    format = "<b>%s</b>\n%b"
+    alignment = left
+    icon_position = left
+    max_icon_size = 48
+    enable_recursive_icon_lookup = true
+    show_age_threshold = -1
+    sort = yes
+    stack_duplicates = true
+    hide_duplicate_count = false
+    mouse_left_click = do_action, close_current
+    mouse_middle_click = do_action, close_current
+    mouse_right_click = close_all
+    # don't auto-dismiss because of idle
+    idle_threshold = 0
+
+[urgency_low]
+    background = "#313244f2"
+    foreground = "#a6adc8"
+    frame_color = "#45475a"
+    timeout = 0
+
+[urgency_normal]
+    background = "#313244f2"
+    foreground = "#cdd6f4"
+    frame_color = "#89b4fa"
+    timeout = 0
+
+[urgency_critical]
+    background = "#313244f2"
+    foreground = "#cdd6f4"
+    frame_color = "#f38ba8"
+    timeout = 0
+
+[play_sound]
+    msg_urgency = low
+    script = ~/.local/bin/dunst-sound
+
+[play_sound_normal]
+    msg_urgency = normal
+    script = ~/.local/bin/dunst-sound
+
+[play_sound_critical]
+    msg_urgency = critical
+    script = ~/.local/bin/dunst-sound
+
+# ---- per-app accent colors (frame) ----
+[slack]
+    appname = "*[Ss]lack*"
+    frame_color = "#36C5F0"
+
+[discord]
+    appname = "*[Dd]iscord*"
+    frame_color = "#5865F2"
+
+[orca]
+    appname = "*[Oo]rca*"
+    frame_color = "#a6e3a1"
+
+[claude]
+    appname = "*[Cc]laude*"
+    frame_color = "#D97757"
+
+# critical always red, regardless of app (must stay last)
+[critical_frame]
+    msg_urgency = critical
+    frame_color = "#f38ba8"

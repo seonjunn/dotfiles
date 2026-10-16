@@ -1,0 +1,16 @@
+#!/bin/sh
+# Remove a notification from notif-log.tsv once dunst reports it closed
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/notif-log-reaper.lock"
+flock -n 9 || exit 0
+# (clicked away, expired, closed by notif-jump, close-all, ...).
+LOG="${XDG_RUNTIME_DIR:-/tmp}/notif-log.tsv"
+dbus-monitor --session "type='signal',interface='org.freedesktop.Notifications',member='NotificationClosed'" 2>/dev/null 9>&- |
+while read -r a b _; do
+  if [ "$a" = uint32 ] && [ -n "$have_id" ]; then
+    have_id=; continue          # second uint32 = close reason
+  fi
+  if [ "$a" = uint32 ]; then
+    id=$b; have_id=1
+    [ -f "$LOG" ] && awk -F'\t' -v id="$id" '$1!=id' "$LOG" > "$LOG.r" && mv "$LOG.r" "$LOG"
+  fi
+done

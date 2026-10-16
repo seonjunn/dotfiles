@@ -1,0 +1,22 @@
+#!/bin/sh
+# Toggle between the app launcher and the notification list.
+#   rofi-launch drun|notif
+# i3 owns the Super chords, so everything is decided here: same menu open ->
+# close it, other menu open -> replace it, nothing open -> open it.
+want=${1:-drun}
+state="${XDG_RUNTIME_DIR:-/tmp}/rofi-mode"
+
+if pgrep -x rofi >/dev/null; then
+  cur=$(cut -d: -f1 "$state" 2>/dev/null)
+  pkill -x rofi
+  [ "$cur" = "$want" ] && exit 0
+  for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -x rofi >/dev/null || break; sleep 0.03; done
+fi
+
+echo "$want:$$" > "$state"
+trap '[ "$(cut -d: -f2 "$state" 2>/dev/null)" = "$$" ] && rm -f "$state"' EXIT
+
+case "$want" in
+  notif) ~/.local/bin/notif-jump ;;
+  *)     rofi -normal-window -show drun -show-icons ;;
+esac

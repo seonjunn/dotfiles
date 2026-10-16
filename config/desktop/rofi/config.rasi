@@ -1,0 +1,11 @@
+configuration {
+    font: "Noto Sans 11";
+    display-drun: "run";
+    drun-display-format: "{name}";
+    /* Home/End move the text cursor in the search field (Ctrl+Home/End jump in the list) */
+    kb-move-front: "Control+a,Home";
+    kb-move-end: "Control+e,End";
+    kb-row-first: "Control+Home,KP_Home";
+    kb-row-last: "Control+End,KP_End";
+}
+@theme "~/.config/rofi/theme.rasi"

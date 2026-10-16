@@ -1,0 +1,38 @@
+/* Catppuccin Mocha for rofi (theme-switcher swaps theme.rasi -> mocha.rasi) */
+* {
+    bg:      #1e1e2e;
+    bg-alt:  #313244;
+    fg:      #cdd6f4;
+    fg-dim:  #7f849c;
+    accent:  #89b4fa;
+    background-color: transparent;
+    text-color: @fg;
+}
+window {
+    background-color: @bg;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 0;
+    padding: 8px;
+}
+mainbox { background-color: transparent; spacing: 8px; }
+inputbar {
+    background-color: @bg-alt;
+    padding: 8px 10px;
+    spacing: 8px;
+    children: [prompt, entry];
+}
+prompt { text-color: @accent; }
+entry { placeholder: "Search…"; placeholder-color: @fg-dim; }
+listview { lines: 10; spacing: 2px; scrollbar: false; fixed-height: false; }
+element { padding: 7px 10px; spacing: 10px; }
+element normal.normal, element alternate.normal { background-color: transparent; text-color: @fg; }
+element selected.normal, element selected.active, element selected.urgent {
+    background-color: @bg-alt;
+    text-color: @fg;
+    border: 0 0 0 3px;
+    border-color: @accent;
+}
+element-text { background-color: transparent; text-color: inherit; }
+element-icon { size: 1.3em; background-color: transparent; }
+message { background-color: @bg-alt; padding: 8px; }

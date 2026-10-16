@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 run_node() {
+  hm_active && return 0 # Home Manager installs node (no nvm)
   run "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | PROFILE=/dev/null bash"
   if [ "$DRY_RUN" = false ]; then
     export NVM_DIR="$SETUP_HOME/.nvm"
@@ -25,7 +26,7 @@ run_node() {
 }
 
 verify_node() {
-  [ -f "$SETUP_HOME/.nvm/nvm.sh" ]
+  hm_active || [ -f "$SETUP_HOME/.nvm/nvm.sh" ]
 }
 
 declare -A OP_NODE=(

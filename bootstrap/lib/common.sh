@@ -42,9 +42,6 @@ setup_init_env() {
   export TARGET_USER TARGET_HOME SETUP_HOME SETUP_DOTFILES_DIR
 
   [ -d "$SETUP_HOME/.local/bin" ] && export PATH="$SETUP_HOME/.local/bin:$PATH"
-  ZB_PREFIX="${ZEROBREW_PREFIX:-/opt/zerobrew/prefix}"
-  [ -d "$SETUP_HOME/.zerobrew/bin" ] && export PATH="$SETUP_HOME/.zerobrew/bin:$PATH"
-  [ -d "$ZB_PREFIX/bin" ] && export PATH="$ZB_PREFIX/bin:$PATH"
   NVM_DIR="${NVM_DIR:-$SETUP_HOME/.nvm}"
   if [ -s "$NVM_DIR/nvm.sh" ]; then
     . "$NVM_DIR/nvm.sh"
@@ -111,6 +108,16 @@ run_as_user() {
   fi
 }
 
+
+# A file is owned by Home Manager when it is a link into the Nix store. Setup leaves those alone.
+hm_owns() {
+  case "$(readlink "$1" 2>/dev/null || true)" in
+    /nix/store/*) return 0 ;;
+  esac
+  return 1
+}
+# Home Manager is in use on this machine (it then installs the CLI tools, not apt or brew).
+hm_active() { [ -e "$SETUP_HOME/.local/state/nix/profiles/home-manager" ]; }
 
 section() { SECTION="$1"; echo "[....] $1"; }
 ok() { echo "[ ok ] $SECTION"; SECTION=""; }

@@ -1,12 +1,5 @@
 #!/usr/bin/env bash
 
-# A file is owned by Home Manager when it is a link into the Nix store. Setup leaves those alone.
-hm_owns() {
-  case "$(readlink "$1" 2>/dev/null || true)" in
-    /nix/store/*) return 0 ;;
-  esac
-  return 1
-}
 # For fish the directory is real (it holds fish_variables); config.fish tells who owns it.
 hm_manages_fish() { hm_owns "$SETUP_HOME/.config/fish/config.fish"; }
 # HM's tmux config lives in ~/.config/tmux, so ~/.tmux.conf must not come back.

@@ -31,9 +31,6 @@ if test -d $HOME/.nvm
 	end
 end
 if test $_os = Darwin
-	if test -d /opt/zerobrew/prefix/bin
-		fish_add_path -g /opt/zerobrew/prefix/bin
-	end
 	if test -d /opt/homebrew/bin
 		fish_add_path -g /opt/homebrew/bin
 	end

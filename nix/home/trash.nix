@@ -1,5 +1,5 @@
 # `rm` typed in the shell moves files to the trash (bin/trash-rm); scripts and programs keep the real rm.
-# Real deletion: `command rm`. Items older than 30 days are emptied automatically.
+# Real deletion: `rm-fr` (expands to plain /bin/rm; add -rf yourself). Items older than 30 days are emptied automatically.
 #   Linux: trash-cli, freedesktop trash (~/.local/share/Trash, shared with the file manager); restore: trash-restore
 #   macOS: /usr/bin/trash, Finder trash; restore: Finder's "Put Back"
 { lib, pkgs, ... }:
@@ -10,10 +10,19 @@ lib.mkMerge [
   {
     # `rm` itself is an abbr in nix/data/shell.toml. Under sudo the absolute path is needed (sudo's PATH has no
     # Nix profile); root's files go to root's trash (`sudo trash-restore`).
-    programs.fish.shellAbbrs.sudo-rm = {
-      regex = "^rm$";
-      command = "sudo";
-      expansion = trashRm;
+    programs.fish.shellAbbrs = {
+      sudo-rm = {
+        regex = "^rm$";
+        command = "sudo";
+        expansion = trashRm;
+      };
+      # real rm, no options added; /bin/rm also works after sudo (where `command rm` would not)
+      rm-fr = "/bin/rm";
+      sudo-rm-fr = {
+        regex = "^rm-fr$";
+        command = "sudo";
+        expansion = "/bin/rm";
+      };
     };
   }
   (lib.mkIf pkgs.stdenv.isLinux {

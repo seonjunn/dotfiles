@@ -10,7 +10,10 @@
       enable = true;
       # Runs before the interactive check: `ssh host cmd` gets a non-interactive, non-login bash that reads
       # only ~/.bashrc, so without this it misses ~/.local/bin and the other session paths. Prints nothing.
+      # The Nix installer hooks /etc/bash.bashrc on Debian/Ubuntu (read there) but /etc/bashrc on RHEL (read only
+      # by the distro's own ~/.bashrc), so load its PATH setup here too; it guards against double loading.
       bashrcExtra = ''
+        [ -r /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ] && . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
         [ -r "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh" ] && . "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
       '';
       # initExtra runs only in interactive shells. Login shells only: `bash -c` (scripts, Claude Code's

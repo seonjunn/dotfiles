@@ -6,11 +6,11 @@ let
   shell = builtins.fromTOML (builtins.readFile ../data/shell.toml);
 in
 {
-  # PATH entries, highest priority first (node and npm globals: node.nix)
-  home.sessionPath = [
-    "$HOME/.local/bin"
-    "$HOME/bin"
-    "${../..}/bin" # inside the whole tree: scripts find ../config from there
+  # PATH, highest priority first: what I declare (the HM profile: Nix packages and my scripts, scripts.nix),
+  # then hand-installed tools (npm globals: node.nix; ~/.local/bin, ~/bin), then the system.
+  home.sessionPath = lib.mkMerge [
+    (lib.mkBefore [ "${config.home.profileDirectory}/bin" ])
+    (lib.mkAfter [ "$HOME/.local/bin" "$HOME/bin" ])
   ];
 
   home.sessionVariables = {
@@ -29,9 +29,9 @@ in
       if test -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish
         source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish
       end
-      # Same PATH order everywhere: my own dirs (home.sessionPath) before the Nix profile. A fish login put the
-      # Nix profile first (sourced just above, after the session vars) while bash-to-fish servers did not, so one
-      # name could run different programs per machine (trash-cli's trash-rm shadowed ours, 2026-10-18).
+      # Same PATH order on every machine: home.sessionPath as declared. nix-daemon.fish (just above, after the
+      # session vars) prepends its own dirs; on bash-to-fish servers it did not, so one name could run different
+      # programs per machine (trash-cli's trash-rm shadowed ours, 2026-10-18).
       fish_add_path --global --move --path ${lib.concatMapStringsSep " " (p: "\"${p}\"") config.home.sessionPath}
 
       # secrets and machine env (fish syntax), never committed

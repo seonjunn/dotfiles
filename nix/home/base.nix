@@ -14,6 +14,7 @@
     ./trash.nix
     ./bash.nix
     ./systemd.nix
+    ./scripts.nix
   ];
 
   programs.home-manager.enable = true;

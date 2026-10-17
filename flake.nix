@@ -16,6 +16,8 @@
     # Machine-agnostic modules. A machine's own config can import these and add its specifics.
     homeModules = {
       base = ./nix/home/base.nix;
+      # base for an account on a shared server: login shell stays bash and hands over to fish
+      server = ./nix/home/server.nix;
       # opt-in: i3 desktop configs and scripts (Linux)
       desktop = ./nix/home/desktop.nix;
       # opt-in: Android device tools (adb, fastboot, adb-shell); not part of base

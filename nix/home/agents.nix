@@ -1,8 +1,10 @@
 # Instruction files and skills for coding agents (Claude Code, Codex), and the IPython profile.
-# Only files are linked; settings.json and session state stay the tools' own.
+# Files are linked. ~/.claude/settings.json is Claude's own (it writes /model, "always allow", ...),
+# so each switch merges config/claude/settings.json into it instead (claude-settings-merge.py).
+# Session state stays the tools' own.
 # ~/.claude/{skills,commands,agents} stay real directories with one link per entry, so local
 # additions (e.g. a synced skill) live next to these.
-{ lib, ... }:
+{ lib, pkgs, ... }:
 let
   cfg = ../../config;
   linkEach = dst: dir:
@@ -20,4 +22,8 @@ in
   // linkEach ".claude/skills" (cfg + "/agents/skills")
   // linkEach ".claude/commands" (cfg + "/claude/commands")
   // linkEach ".claude/agents" (cfg + "/claude/agents");
+
+  home.activation.claudeSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run ${pkgs.python3}/bin/python3 -I ${./claude-settings-merge.py} ${cfg + "/claude/settings.json"}
+  '';
 }

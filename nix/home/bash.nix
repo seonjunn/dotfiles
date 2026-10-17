@@ -8,6 +8,11 @@
   config = lib.mkIf config.dotfiles.bash.enable {
     programs.bash = {
       enable = true;
+      # Runs before the interactive check: `ssh host cmd` gets a non-interactive, non-login bash that reads
+      # only ~/.bashrc, so without this it misses ~/.local/bin and the other session paths. Prints nothing.
+      bashrcExtra = ''
+        [ -r "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh" ] && . "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
+      '';
       # initExtra runs only in interactive shells. Login shells only: `bash -c` (scripts, Claude Code's
       # Bash tool, VS Code) must stay bash, and typing `bash` inside fish must give bash.
       initExtra = ''

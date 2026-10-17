@@ -14,9 +14,10 @@
         [ -r "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh" ] && . "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
       '';
       # initExtra runs only in interactive shells. Login shells only: `bash -c` (scripts, Claude Code's
-      # Bash tool, VS Code) must stay bash, and typing `bash` inside fish must give bash.
+      # Bash tool, VS Code) must stay bash, and typing `bash` inside fish must give bash. And only without
+      # a command: tools that read the login environment run `bash -lic 'cmd'`, which exec would swallow.
       initExtra = ''
-        if shopt -q login_shell; then
+        if shopt -q login_shell && [ -z "''${BASH_EXECUTION_STRING:-}" ]; then
           if [ -x "$HOME/.nix-profile/bin/fish" ]; then
             exec "$HOME/.nix-profile/bin/fish" -l
           elif command -v fish >/dev/null; then

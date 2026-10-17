@@ -46,7 +46,10 @@ in
   config.home.file = {
     ".Xmodmap".source = srcOf "Xmodmap";
     ".xprofile".source = srcOf "xprofile"; # input method environment (fcitx5) for the X session
-  }
-  // lib.mapAttrs' (n: _: lib.nameValuePair ".local/bin/${n}" { source = srcOf "bin/${n}"; })
+  };
+
+  # desktop scripts go into the profile with the other commands (scripts.nix); live: run from the checkout
+  config.dotfiles.scripts = lib.mapAttrs
+    (n: _: if live == null then src + "/bin/${n}" else "${live}/config/desktop/bin/${n}")
     (builtins.readDir (src + "/bin"));
 }

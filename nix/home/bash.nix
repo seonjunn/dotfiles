@@ -1,5 +1,5 @@
 # bash for machines whose login shell stays bash (lab servers: no chsh to a Nix fish there).
-# Opt in with dotfiles.bash.enable: Home Manager then owns ~/.bashrc, ~/.profile and ~/.bash_profile,
+# Opt in with dotfiles.bash.enable (homeModules.server does): Home Manager then owns ~/.bashrc, ~/.profile and ~/.bash_profile,
 # and an interactive login bash (ssh, tmux pane) hands over to fish.
 { config, lib, ... }:
 {

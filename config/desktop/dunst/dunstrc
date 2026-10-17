@@ -49,15 +49,15 @@
 
 [play_sound]
     msg_urgency = low
-    script = ~/.local/bin/dunst-sound
+    script = ~/.nix-profile/bin/dunst-sound
 
 [play_sound_normal]
     msg_urgency = normal
-    script = ~/.local/bin/dunst-sound
+    script = ~/.nix-profile/bin/dunst-sound
 
 [play_sound_critical]
     msg_urgency = critical
-    script = ~/.local/bin/dunst-sound
+    script = ~/.nix-profile/bin/dunst-sound
 
 # ---- per-app accent colors (frame) ----
 [slack]

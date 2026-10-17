@@ -69,12 +69,12 @@ exec_always --no-startup-id ~/.config/i3/xmodmap-guard
 exec_always --no-startup-id nitrogen --restore
 
 # automatic theme switcher (light / dark)
-exec_always --no-startup-id ~/.local/bin/theme-switcher auto
-bindsym $mod+Shift+t exec --no-startup-id ~/.local/bin/theme-switcher toggle
-bindsym $mod+t exec --no-startup-id ~/.local/bin/rofi-launch notif
+exec_always --no-startup-id ~/.nix-profile/bin/theme-switcher auto
+bindsym $mod+Shift+t exec --no-startup-id ~/.nix-profile/bin/theme-switcher toggle
+bindsym $mod+t exec --no-startup-id ~/.nix-profile/bin/rofi-launch notif
 # rofi runs as a normal window (so i3 keeps seeing mod+space / mod+t); keep it floating + centered
 for_window [class="Rofi"] floating enable, border pixel 2, resize set 1000 420, move position center
-exec_always --no-startup-id ~/.local/bin/notif-log-reaper
+exec_always --no-startup-id ~/.nix-profile/bin/notif-log-reaper
 
 # compositor
 exec_always --no-startup-id pgrep -x picom || picom -b
@@ -101,7 +101,7 @@ focus_follows_mouse no
 
 
 # start dmenu (a program launcher)
-bindsym $mod+space exec --no-startup-id ~/.local/bin/rofi-launch drun
+bindsym $mod+space exec --no-startup-id ~/.nix-profile/bin/rofi-launch drun
 #bindsym $alt+space exec --no-startup-id rofi -show window -show-icons
 
 # A more modern dmenu replacement is rofi:
@@ -154,28 +154,28 @@ client.background        $base
 
 
 # change focus
-bindsym $mod+h exec --no-startup-id ~/.local/bin/i3-maximize focus left
-bindsym $mod+j exec --no-startup-id ~/.local/bin/i3-maximize focus down
-bindsym $mod+k exec --no-startup-id ~/.local/bin/i3-maximize focus up
-bindsym $mod+l exec --no-startup-id ~/.local/bin/i3-maximize focus right
+bindsym $mod+h exec --no-startup-id ~/.nix-profile/bin/i3-maximize focus left
+bindsym $mod+j exec --no-startup-id ~/.nix-profile/bin/i3-maximize focus down
+bindsym $mod+k exec --no-startup-id ~/.nix-profile/bin/i3-maximize focus up
+bindsym $mod+l exec --no-startup-id ~/.nix-profile/bin/i3-maximize focus right
 
 # alternatively, you can use the cursor keys:
-bindsym $mod+Left exec --no-startup-id ~/.local/bin/i3-maximize focus left
-bindsym $mod+Down exec --no-startup-id ~/.local/bin/i3-maximize focus down
-bindsym $mod+Up exec --no-startup-id ~/.local/bin/i3-maximize focus up
-bindsym $mod+Right exec --no-startup-id ~/.local/bin/i3-maximize focus right
+bindsym $mod+Left exec --no-startup-id ~/.nix-profile/bin/i3-maximize focus left
+bindsym $mod+Down exec --no-startup-id ~/.nix-profile/bin/i3-maximize focus down
+bindsym $mod+Up exec --no-startup-id ~/.nix-profile/bin/i3-maximize focus up
+bindsym $mod+Right exec --no-startup-id ~/.nix-profile/bin/i3-maximize focus right
 
 # move focused window
-bindsym $mod+Shift+h exec --no-startup-id ~/.local/bin/i3-maximize move left
-bindsym $mod+Shift+j exec --no-startup-id ~/.local/bin/i3-maximize move down
-bindsym $mod+Shift+k exec --no-startup-id ~/.local/bin/i3-maximize move up
-bindsym $mod+Shift+l exec --no-startup-id ~/.local/bin/i3-maximize move right
+bindsym $mod+Shift+h exec --no-startup-id ~/.nix-profile/bin/i3-maximize move left
+bindsym $mod+Shift+j exec --no-startup-id ~/.nix-profile/bin/i3-maximize move down
+bindsym $mod+Shift+k exec --no-startup-id ~/.nix-profile/bin/i3-maximize move up
+bindsym $mod+Shift+l exec --no-startup-id ~/.nix-profile/bin/i3-maximize move right
 
 # alternatively, you can use the cursor keys:
-bindsym $mod+Shift+Left exec --no-startup-id ~/.local/bin/i3-maximize move left
-bindsym $mod+Shift+Down exec --no-startup-id ~/.local/bin/i3-maximize move down
-bindsym $mod+Shift+Up exec --no-startup-id ~/.local/bin/i3-maximize move up
-bindsym $mod+Shift+Right exec --no-startup-id ~/.local/bin/i3-maximize move right
+bindsym $mod+Shift+Left exec --no-startup-id ~/.nix-profile/bin/i3-maximize move left
+bindsym $mod+Shift+Down exec --no-startup-id ~/.nix-profile/bin/i3-maximize move down
+bindsym $mod+Shift+Up exec --no-startup-id ~/.nix-profile/bin/i3-maximize move up
+bindsym $mod+Shift+Right exec --no-startup-id ~/.nix-profile/bin/i3-maximize move right
 
 # split in horizontal orientation
 bindsym $mod+Shift+v split h
@@ -184,7 +184,7 @@ bindsym $mod+Shift+v split h
 bindsym $mod+v split v
 
 # enter fullscreen mode for the focused container
-bindsym $mod+f exec --no-startup-id ~/.local/bin/i3-maximize
+bindsym $mod+f exec --no-startup-id ~/.nix-profile/bin/i3-maximize
 bindsym $mod+Shift+f fullscreen toggle
 
 # change container layout (stacked, tabbed, toggle split)

@@ -17,6 +17,6 @@ echo "$want:$$" > "$state"
 trap '[ "$(cut -d: -f2 "$state" 2>/dev/null)" = "$$" ] && rm -f "$state"' EXIT
 
 case "$want" in
-  notif) ~/.local/bin/notif-jump ;;
+  notif) ~/.nix-profile/bin/notif-jump ;;
   *)     rofi -normal-window -show drun -show-icons ;;
 esac

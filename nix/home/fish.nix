@@ -1,7 +1,7 @@
 # fish. config.fish keeps only what has to be fish code; PATH, environment, aliases and
 # abbreviations are declared. Function files come from config/fish/functions.
 # Machine-specific additions go to ~/.config/fish/local.fish (read last, never committed).
-{ lib, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 let
   shell = builtins.fromTOML (builtins.readFile ../data/shell.toml);
 in
@@ -29,6 +29,10 @@ in
       if test -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish
         source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish
       end
+      # Same PATH order everywhere: my own dirs (home.sessionPath) before the Nix profile. A fish login put the
+      # Nix profile first (sourced just above, after the session vars) while bash-to-fish servers did not, so one
+      # name could run different programs per machine (trash-cli's trash-rm shadowed ours, 2026-10-18).
+      fish_add_path --global --move --path ${lib.concatMapStringsSep " " (p: "\"${p}\"") config.home.sessionPath}
 
       # secrets and machine env (fish syntax), never committed
       if test -f $HOME/.env

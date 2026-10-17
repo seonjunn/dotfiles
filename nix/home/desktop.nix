@@ -48,6 +48,30 @@ in
     ".xprofile".source = srcOf "xprofile"; # input method environment (fcitx5) for the X session
   };
 
+  # user services of the desktop (were hand-written units on alice until 2026-10-18). They run the scripts by
+  # their place in the profile, so they follow live edits too.
+  config.systemd.user.services = {
+    i3-focus-urgent = {
+      Unit.Description = "i3 helper: focus browsers on urgency, keep Brave on the current workspace";
+      Service = {
+        ExecStart = "${config.home.profileDirectory}/bin/i3-focus-urgent";
+        Restart = "always";
+        RestartSec = 2;
+        Environment = "DISPLAY=:0";
+      };
+      Install.WantedBy = [ "default.target" ];
+    };
+    theme-switcher = {
+      Unit = { Description = "Time-based theme switcher"; After = [ "graphical-session.target" ]; };
+      Service = { Type = "oneshot"; ExecStart = "${config.home.profileDirectory}/bin/theme-switcher auto"; };
+    };
+  };
+  config.systemd.user.timers.theme-switcher = {
+    Unit.Description = "Time-based theme switcher, every 3 minutes";
+    Timer = { OnBootSec = "1m"; OnUnitActiveSec = "3m"; Persistent = true; };
+    Install.WantedBy = [ "timers.target" ];
+  };
+
   # desktop scripts go into the profile with the other commands (scripts.nix); live: run from the checkout
   config.dotfiles.scripts = lib.mapAttrs
     (n: _: if live == null then src + "/bin/${n}" else "${live}/config/desktop/bin/${n}")

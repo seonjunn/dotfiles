@@ -1,11 +1,13 @@
-# `rm` typed in the shell moves files to the trash (bin/trash-rm); scripts and programs keep the real rm.
+# `rm` typed in the shell moves files to the trash (bin/rm-trash); scripts and programs keep the real rm.
+# (Not "trash-rm": trash-cli has a trash-rm that permanently deletes matching items from the trash, and it came
+# first in PATH, so `rm` silently did that instead of trashing; 2026-10-18.)
 # Real deletion: `rm-fr` (expands to plain /bin/rm; add -rf yourself). Items older than dotfiles.trash.days (30) are emptied automatically
 # (Linux; servers with full disks use fewer).
 #   Linux: trash-cli, freedesktop trash (~/.local/share/Trash, shared with the file manager); restore: trash-restore
 #   macOS: /usr/bin/trash, Finder trash; restore: Finder's "Put Back"
 { config, lib, pkgs, ... }:
 let
-  trashRm = "${../..}/bin/trash-rm";
+  trashRm = "${../..}/bin/rm-trash";
   days = toString config.dotfiles.trash.days;
 in
 {

@@ -7,7 +7,7 @@
 [abbrs]
 mv = "mv -iv"
 cp = "cp -riv"
-rm = "trash-rm"   # to the trash (nix/home/trash.nix); real rm: `rm-fr`
+rm = "rm-trash"   # to the trash (nix/home/trash.nix); real rm: `rm-fr`
 mkdir = "mkdir -vp"
 dotsetup = "$HOME/.dotfiles/setup.sh"
 sfish = "source $HOME/.config/fish/config.fish"

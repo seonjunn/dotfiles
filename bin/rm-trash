@@ -1,5 +1,5 @@
 #!/bin/sh
-# trash-rm: what the interactive `rm` abbr runs. Moves files to the trash instead of deleting them.
+# rm-trash: what the interactive `rm` abbr runs. Moves files to the trash instead of deleting them.
 #   Linux: trash-cli (freedesktop trash, ~/.local/share/Trash; same trash as the file manager)
 #          restore: trash-restore, list: trash-list
 #   macOS: /usr/bin/trash (Finder trash; restore with Finder's "Put Back")
@@ -13,10 +13,10 @@ for a in "$@"; do
     case "$a" in
       --) endopts=1; continue ;;
       --recursive|--force|--interactive*|--verbose|--dir|-[rRfivdI]*) continue ;;
-      -*) echo "trash-rm: unknown option $a (use rm-fr for real rm)" >&2; exit 2 ;;
+      -*) echo "rm-trash: unknown option $a (use rm-fr for real rm)" >&2; exit 2 ;;
     esac
   fi
-  [ -e "$a" ] || [ -L "$a" ] || { echo "trash-rm: $a: no such file" >&2; status=1; continue; }
+  [ -e "$a" ] || [ -L "$a" ] || { echo "rm-trash: $a: no such file" >&2; status=1; continue; }
   files="$files
 $a"
 done
@@ -27,7 +27,7 @@ case "$(uname)" in
     cmd=$(command -v trash-put || true)
     # sudo's PATH does not include the user's Nix profile
     [ -n "$cmd" ] || { [ -n "$SUDO_USER" ] && cmd=$(eval echo "~$SUDO_USER")/.nix-profile/bin/trash-put; }
-    [ -x "$cmd" ] || { echo "trash-rm: trash-put not found (install trash-cli)" >&2; exit 1; } ;;
+    [ -x "$cmd" ] || { echo "rm-trash: trash-put not found (install trash-cli)" >&2; exit 1; } ;;
 esac
 # macOS trash returns 0 even when it did nothing, so check that each file is gone afterwards
 printf '%s\n' "$files" | sed '1d' | {
@@ -35,7 +35,7 @@ printf '%s\n' "$files" | sed '1d' | {
   while IFS= read -r f; do
     case "$f" in -*) f="./$f" ;; esac   # neither tool takes "--"
     "$cmd" "$f" || true
-    if [ -e "$f" ] || [ -L "$f" ]; then echo "trash-rm: could not trash $f" >&2; rc=1; fi
+    if [ -e "$f" ] || [ -L "$f" ]; then echo "rm-trash: could not trash $f" >&2; rc=1; fi
   done
   exit $rc
 } || status=1

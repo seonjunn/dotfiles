@@ -13,6 +13,7 @@
     ./agents.nix
     ./trash.nix
     ./bash.nix
+    ./systemd.nix
   ];
 
   programs.home-manager.enable = true;

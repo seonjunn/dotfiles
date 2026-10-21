@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 run_rust() {
+  hm_active && return 0 # Home Manager installs zoxide and eza; no rustup until Rust work needs one
   if [ ! -f "$SETUP_HOME/.cargo/bin/rustup" ]; then
     run "curl -sSf https://sh.rustup.rs | sh -s -- -y"
   fi
@@ -16,6 +17,7 @@ run_rust() {
 }
 
 verify_rust() {
+  hm_active && return 0
   [ -f "$SETUP_HOME/.cargo/bin/rustup" ] &&
   [ -f "$SETUP_HOME/.cargo/bin/zoxide" ] &&
   [ -f "$SETUP_HOME/.cargo/bin/eza" ]

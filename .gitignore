@@ -1,3 +1,4 @@
 .dotpl.log
 .dotpl-failed
 .setup-needed
+__pycache__/

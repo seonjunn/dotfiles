@@ -20,6 +20,8 @@
       server = ./nix/home/server.nix;
       # opt-in: i3 desktop configs and scripts (Linux)
       desktop = ./nix/home/desktop.nix;
+      # opt-in: VS Code on a GUI machine: settings.json keys and local extensions follow dotfiles.vscode.{ui,remote}
+      vscode = ./nix/home/vscode.nix;
       # opt-in: Android device tools (adb, fastboot, adb-shell); not part of base
       android = import ./nix/home/android.nix { inherit adb-shell; };
     };

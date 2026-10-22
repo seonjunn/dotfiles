@@ -1,0 +1,171 @@
+{
+    "workbench.colorTheme": "Catppuccin Mocha",
+    "security.workspace.trust.untrustedFiles": "open",
+    "[python]": {
+        "editor.formatOnType": true,
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    "vim.vimrc.enable": true,
+    "editor.lineNumbers": "relative",
+    "notebook.lineNumbers": "on",
+    "editor.inlineSuggest.enabled": true,
+    "zenMode.hideLineNumbers": false,
+    "editor.scrollbar.horizontal": "hidden",
+    "editor.scrollbar.vertical": "hidden",
+    "editor.hideCursorInOverviewRuler": true,
+    "terminal.external.linuxExec": "kitty",
+    "terminal.external.osxExec": "kitty",
+    "workbench.startupEditor": "none",
+    "editor.fontLigatures": true,
+    "workbench.iconTheme": "vscode-icons",
+    "remote.SSH.useLocalServer": false,
+    "remote.SSH.externalSSH_ASKPASS": true,
+    "editor.multiCursorModifier": "ctrlCmd",
+    "terminal.integrated.commandsToSkipShell": [
+        "-workbench.action.terminal.focusFind"
+    ],
+    "vsicons.dontShowNewVersionMessage": true,
+    "jupyter.widgetScriptSources": [
+        "jsdelivr.com",
+        "unpkg.com"
+    ],
+    "git.openRepositoryInParentFolders": "never",
+    "notebook.output.textLineLimit": 1000,
+    "notebook.output.scrolling": true,
+    "editor.defaultFormatter": "xaver.clang-format",
+    "vim.handleKeys": {
+        "<C-u>": true,
+        "<C-d>": true,
+        "<C-s>": false,
+        "<C-z>": false,
+        "<C-p>": false,
+        "<C-j>": false,
+        "<C-k>": false
+    },
+    "cmake.showOptionsMovedNotification": false,
+    "cmake.options.statusBarVisibility": "compact",
+    "explorer.confirmDelete": false,
+    "cmake.configureOnOpen": true,
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "window.menuBarVisibility": "toggle",
+    "[latex]": {
+        "editor.defaultFormatter": "James-Yu.latex-workshop"
+    },
+    "latex-workshop.linting.chktex.enabled": true,
+    "todo-tree.general.tags": [
+        "BUG",
+        "HACK",
+        "FIXME",
+        "TODO",
+        "XXX",
+        "NOTE",
+        "[ ]",
+        "[x]"
+    ],
+    "[cuda]": {
+        "editor.defaultFormatter": "xaver.clang-format"
+    },
+    "[cpp]": {
+        "editor.defaultFormatter": "xaver.clang-format"
+    },
+    "cmake.pinnedCommands": [
+        "workbench.action.tasks.configureTaskRunner",
+        "workbench.action.tasks.runTask"
+    ],
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[starlark]": {
+        "editor.defaultFormatter": "BazelBuild.vscode-bazel"
+    },
+    "notebook.output.wordWrap": true,
+    "remote.autoForwardPortsSource": "hybrid",
+    "python.analysis.include": [
+        "*.ipynb",
+        "**/transformers/src/*"
+    ],
+    "editor.accessibilitySupport": "off",
+    "files.trimTrailingWhitespaceInRegexAndStrings": false,
+    "C_Cpp.clang_format_style": "Google",
+    "C_Cpp.clang_format_fallbackStyle": "",
+    "latex-workshop.formatting.latex": "latexindent",
+    "latex-workshop.bibtex-fields.sort.enabled": true,
+    "update.mode": "start",
+    "clang-format.style": "Chromium",
+    "diffEditor.ignoreTrimWhitespace": false,
+    "python.languageServer": "Default",
+    "explorer.fileNesting.patterns": {
+        "*.ts": "${capture}.js",
+        "*.js": "${capture}.js.map, ${capture}.min.js, ${capture}.d.ts",
+        "*.jsx": "${capture}.js",
+        "*.tsx": "${capture}.ts",
+        "tsconfig.json": "tsconfig.*.json",
+        "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml, bun.lockb, bun.lock",
+        "Cargo.toml": "Cargo.lock",
+        "*.sqlite": "${capture}.${extname}-*",
+        "*.db": "${capture}.${extname}-*",
+        "*.sqlite3": "${capture}.${extname}-*",
+        "*.db3": "${capture}.${extname}-*",
+        "*.sdb": "${capture}.${extname}-*",
+        "*.s3db": "${capture}.${extname}-*"
+    },
+    "security.workspace.trust.startupPrompt": "never",
+    "terminal.integrated.stickyScroll.enabled": false,
+    "chat.viewSessions.orientation": "stacked",
+    "workbench.sideBar.location": "right",
+    "chat.tools.terminal.autoApprove": {
+        "rm": false,
+        "rmdir": false,
+        "del": false,
+        "kill": false,
+        "curl": false,
+        "wget": false,
+        "eval": false,
+        "chmod": false,
+        "chown": false,
+        "/^Remove-Item\\b/i": false,
+        "bazel build": true,
+        "bazel query": true,
+        "bazel test": true,
+        "bazel run": true,
+        "ls": true,
+        "find": true,
+        "pwd": true,
+        "cd": true,
+        "echo": true,
+        "nm": true,
+        "ldd": true,
+        "cat": true,
+        "grep": true,
+        "./bazel-bin/orchestra/tools/kernel-manifest-inspector": true,
+        "/workspaces/orchestra-project/bazel-bin/orchestra/compiler/orcc": true,
+        "git status": true,
+        "python3 rpc_matmul.py": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "python3 test_rpc_opencl.py": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    },
+    "claudeCode.allowDangerouslySkipPermissions": true,
+    "claudeCode.initialPermissionMode": "bypassPermissions",
+    "claudeCode.preferredLocation": "panel",
+    "claudeCode.hideOnboarding": true,
+    "editor.wordWrap": "on",
+    "python.analysis.typeCheckingMode": "standard",
+    "remote.extensionKind": {
+        "vscodevim.vim": [
+            "ui"
+        ]
+    },
+    "terminal.integrated.automationProfile.linux": {},
+    "terminal.integrated.enableMultiLinePasteWarning": "never",
+    "terminal.integrated.enableVisualBell": true,
+    "vim.insertModeKeyBindings": [],
+    "workbench.activityBar.location": "top",
+    "slidev.preview-sync": true
+}

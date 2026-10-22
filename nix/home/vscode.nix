@@ -1,5 +1,8 @@
 # VS Code on a machine with its GUI (opt-in: homeModules.vscode). VS Code itself is installed outside Nix
-# (cask, apt); this keeps its extensions to a declared list:
+# (cask, apt). Settings: config/vscode/settings.json (what every machine shares) and dotfiles.vscode.settings
+# are merged into settings.json each switch; keys only one machine needs (font, zoom, input method commands)
+# stay in its own settings.json. VS Code's Settings Sync should be off: it would be a second source.
+# Extensions are kept to a declared list:
 # - settings.json gains `extensions.allowed` (only the listed ones may be installed or run; others are
 #   refused and disabled) and `remote.SSH.defaultExtensions` (the `remote` list, installed on every
 #   server on first connect). Merged each switch like Claude's settings (settings-merge.py): the rest of
@@ -11,10 +14,11 @@
 let
   cfg = config.dotfiles.vscode;
   ids = map lib.toLower (cfg.ui ++ cfg.remote);
-  managed = pkgs.writeText "vscode-settings.json" (builtins.toJSON {
-    "extensions.allowed" = lib.genAttrs ids (_: true);
-    "remote.SSH.defaultExtensions" = cfg.remote;
-  });
+  managed = pkgs.writeText "vscode-settings.json" (builtins.toJSON (
+    builtins.fromJSON (builtins.readFile ../../config/vscode/settings.json) // cfg.settings // {
+      "extensions.allowed" = lib.genAttrs ids (_: true);
+      "remote.SSH.defaultExtensions" = cfg.remote;
+    }));
   settings = if pkgs.stdenv.isDarwin
     then "$HOME/Library/Application Support/Code/User/settings.json"
     else "${config.xdg.configHome}/Code/User/settings.json";
@@ -45,6 +49,7 @@ in
   options.dotfiles.vscode = {
     ui = lib.mkOption { type = lib.types.listOf lib.types.str; default = [ ]; description = "Extensions that run on this machine only."; };
     remote = lib.mkOption { type = lib.types.listOf lib.types.str; default = [ ]; description = "Extensions that run where the files are (also installed on servers)."; };
+    settings = lib.mkOption { type = lib.types.attrs; default = { }; description = "More settings.json keys from the machine's config (e.g. per-host values)."; };
   };
 
   config.home.activation.vscode = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

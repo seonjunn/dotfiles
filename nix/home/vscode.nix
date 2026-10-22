@@ -9,7 +9,10 @@
 # - settings.json gains `extensions.allowed` (only the listed ones may be installed or run; others are
 #   refused and disabled) and `remote.SSH.defaultExtensions` (the `remote` list, installed on every
 #   server on first connect).
-# - each switch installs the missing ones and uninstalls the rest locally (`code` CLI; failures only warn).
+# - each switch installs newly listed ones and uninstalls ones the list dropped (`code` CLI; failures only
+#   warn). Extensions installed or removed by hand since the last switch are left and reported (D38).
+# Hand edits of declared settings keys are kept and reported too (settings-merge.py); see *.drift.json in
+# ~/.local/state/dotfiles, and `infra-update drift`.
 # ui: runs on this machine only (theme, keys, remote connection). remote: runs where the files are, so
 # this machine needs them too for local folders.
 { config, lib, pkgs, ... }:
@@ -39,20 +42,37 @@ let
     done
     [ -n "$code" ] || { echo "vscode: no code CLI, extensions not synced"; exit 0; }
     want=" ${lib.concatStringsSep " " ids} "
+    state=$HOME/.local/state/dotfiles/vscode-extensions.txt  # the list applied last time
+    drift=$HOME/.local/state/dotfiles/vscode-extensions.drift.json
+    prev=" $(cat "$state" 2>/dev/null || echo "$want") "
+    has() { case "$2" in *" $1 "*) return 0;; esac; return 1; }
     have() { echo " $("$code" --list-extensions 2>/dev/null | tr 'A-Z' 'a-z' | tr '\n' ' ') "; }
+    start=$(have); kept=""; gone=""; rm_ext=""
+    # three-way (D38): remove only what the declaration dropped; one installed or removed by hand since the
+    # last switch stays as it is and is reported (SETTINGS_MERGE_FORCE=1: the declaration wins)
+    for x in $start; do
+      has "$x" "$want" && continue
+      if has "$x" "$prev" || [ "''${SETTINGS_MERGE_FORCE:-}" = 1 ]; then rm_ext="$rm_ext $x"; else kept="$kept $x"; fi
+    done
     # two passes, re-reading the list each step: uninstalling an extension pack also uninstalls its
     # members (some of them wanted), and an extension others depend on only goes after them
     for pass in 1 2; do
-      for x in $(have); do
-        case "$want" in *" $x "*) ;; *) "$code" --uninstall-extension "$x" >/dev/null 2>&1 && echo "vscode: removed $x";; esac
-      done
+      h=$(have)
+      for x in $rm_ext; do has "$x" "$h" && "$code" --uninstall-extension "$x" >/dev/null 2>&1 && echo "vscode: removed $x"; done
       h=$(have)
       for x in $want; do
-        case "$h" in *" $x "*) ;; *) "$code" --install-extension "$x" >/dev/null 2>&1 && echo "vscode: installed $x" || echo "vscode: could not install $x";; esac
+        has "$x" "$h" && continue
+        if has "$x" "$start" || ! has "$x" "$prev" || [ "''${SETTINGS_MERGE_FORCE:-}" = 1 ]; then
+          "$code" --install-extension "$x" >/dev/null 2>&1 && echo "vscode: installed $x" || echo "vscode: could not install $x"
+        elif [ "$pass" = 1 ]; then gone="$gone $x"; fi
       done
     done
-    h=$(have)
-    for x in $h; do case "$want" in *" $x "*) ;; *) echo "vscode: still installed, not in the list: $x";; esac; done
+    mkdir -p "$(dirname "$state")"; echo "$want" > "$state"
+    for x in $kept; do echo "vscode: kept $x, installed here by hand (not in the list)" >&2; done
+    for x in $gone; do echo "vscode: did not reinstall $x, removed here by hand" >&2; done
+    if [ -n "$kept$gone" ]; then
+      printf '{"installed_by_hand": "%s", "removed_by_hand": "%s"}\n' "''${kept# }" "''${gone# }" > "$drift"
+    else rm -f "$drift"; fi
   '';
 in
 {
@@ -64,6 +84,13 @@ in
   };
 
   config.home.activation.vscode = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    # first run of the extension state: the list applied last time is the extensions.allowed of the last
+    # merged settings, read before this switch merges the new ones
+    st=$HOME/.local/state/dotfiles
+    if [ ! -f "$st/vscode-extensions.txt" ] && [ -f "$st/vscode-settings.json" ] && [ -z "''${DRY_RUN:-}" ]; then
+      ${pkgs.python3}/bin/python3 -I -c 'import json,sys; print(" ".join(json.load(open(sys.argv[1])).get("extensions.allowed", {})))' \
+        "$st/vscode-settings.json" > "$st/vscode-extensions.txt"
+    fi
     ${merge "vscode settings" managed "settings.json" "vscode-settings.json"}
     ${merge "vscode keybindings" keys "keybindings.json" "vscode-keybindings.json"}
     if [ -z "''${DRY_RUN:-}" ]; then ${sync}; fi

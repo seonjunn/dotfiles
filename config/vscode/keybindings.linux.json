@@ -47,6 +47,10 @@
     },
     {
         "key": "ctrl+l",
+        "command": "workbench.action.focusRightGroup"
+    },
+    {
+        "key": "ctrl+l",
         "command": "-expandLineSelection",
         "when": "textInputFocus"
     },

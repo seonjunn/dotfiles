@@ -15,6 +15,7 @@
     ./bash.nix
     ./systemd.nix
     ./scripts.nix
+    ./uv.nix
   ];
 
   programs.home-manager.enable = true;

@@ -16,6 +16,8 @@ let
   ids = map lib.toLower (cfg.ui ++ cfg.remote);
   managed = pkgs.writeText "vscode-settings.json" (builtins.toJSON (
     builtins.fromJSON (builtins.readFile ../../config/vscode/settings.json) // cfg.settings // {
+      # Todo Tree cannot find VS Code's bundled ripgrep; use the HM one (cli.nix), same path on every machine
+      "todo-tree.ripgrep.ripgrep" = "${config.home.profileDirectory}/bin/rg";
       "extensions.allowed" = lib.genAttrs ids (_: true);
       "remote.SSH.defaultExtensions" = cfg.remote;
     }));

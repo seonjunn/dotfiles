@@ -7,12 +7,12 @@ Claude Code's ~/.claude/settings.json (/model, "always allow", ...) and VS Code'
 Settings UI) are written by the apps themselves, so they cannot be read-only Home Manager links.
 Instead each switch merges the managed file into them:
 
-- keys the managed file has: objects merge recursively, lists keep the app's extra items and gain the
-  managed ones, anything else takes the managed value;
-- keys (and list items) the managed file had at the previous switch but no longer has are removed;
-- everything else is left alone.
-
-The managed file applied last time is kept in STATE_JSON to know what was dropped. The first run
+- three-way (decision D38): the managed file now, the one applied last time (STATE_JSON), and the target.
+  A key (or list item) still as applied last time takes the managed value, or goes when the managed file
+  dropped it; one changed in the app since then is kept and listed in <STATE>.drift.json and on stderr,
+  to be declared or reverted (SETTINGS_MERGE_FORCE=1 takes the managed values);
+- objects merge key by key; lists keep the app's extra items;
+- everything the managed file never had is left alone. The first run
 backs up the original next to it (<target>.before-dotfiles).
 
 A list at the top (VS Code's keybindings.json) merges like a list key.
@@ -28,29 +28,50 @@ import sys
 import tempfile
 
 
-def merge_list(cur, new, prev):
-    dropped = [x for x in (prev if isinstance(prev, list) else []) if x not in new]
-    kept = [x for x in cur if x not in dropped]
-    return kept + [x for x in new if x not in kept]
+MISSING = object()
 
 
-def merge(cur, new, prev):
-    if isinstance(new, list):
-        return merge_list(cur if isinstance(cur, list) else [], new, prev)
-    out = dict(cur)
-    for k in prev:
-        if k not in new:
-            out.pop(k, None)
-    for k, v in new.items():
-        p = prev.get(k)
-        c = out.get(k)
-        if isinstance(v, dict) and isinstance(c, dict):
-            out[k] = merge(c, v, p if isinstance(p, dict) else {})
-        elif isinstance(v, list) and isinstance(c, list):
-            out[k] = merge_list(c, v, p)
+def merge_list(cur, new, prev, path, drift):
+    prev = prev if isinstance(prev, list) else []
+    out = [x for x in cur if not (x in prev and x not in new)]  # dropped from the declaration
+    for x in new:
+        if x in out:
+            continue
+        if x in prev and not FORCE:  # applied before and removed here by hand: keep it removed
+            drift.append({"key": path, "declared": x, "here": "(removed)"})
         else:
-            out[k] = v
+            out.append(x)
     return out
+
+
+def merge(cur, new, prev, path="", drift=None):
+    """Three-way: declared now (new), applied last time (prev), on the machine (cur).
+    A value still equal to what was applied last time takes the declared one; a value changed here
+    since then is kept and reported in drift (decision D38: never overwrite a hand edit silently)."""
+    if isinstance(new, list):
+        return merge_list(cur if isinstance(cur, list) else [], new, prev, path or "[]", drift)
+    out = dict(cur)
+    prev = prev if isinstance(prev, dict) else {}
+    for k in set(prev) | set(new):
+        v, p, c = new.get(k, MISSING), prev.get(k, MISSING), out.get(k, MISSING)
+        key = f"{path}/{k}" if path else k
+        if isinstance(v, dict) and isinstance(c, dict):
+            out[k] = merge(c, v, p, key, drift)
+        elif isinstance(v, list) and isinstance(c, list):
+            out[k] = merge_list(c, v, p, key, drift)
+        elif c == v:
+            pass
+        elif c == p or FORCE:
+            if v is MISSING:
+                out.pop(k, None)
+            else:
+                out[k] = v
+        else:
+            drift.append({"key": key, "declared": None if v is MISSING else v, "here": None if c is MISSING else c})
+    return out
+
+
+FORCE = os.environ.get("SETTINGS_MERGE_FORCE") == "1"  # take the declared values over hand edits
 
 
 class HasComments(Exception):
@@ -130,11 +151,19 @@ def main():
         print(f"{label}: {target} has comments, left as is (merge by hand or remove the comments)", file=sys.stderr)
         return
 
-    out = merge(cur, new, prev)
+    drift = []
+    out = merge(cur, new, prev, "", drift)
     if out != cur or not os.path.exists(target):
         write(target, out, indent)
         print(f"{label}: updated {target}")
     write(state, new, 2)
+    report = state[:-len(".json")] + ".drift.json" if state.endswith(".json") else state + ".drift"
+    if drift:
+        write(report, {"target": target, "drift": drift}, 2)
+        for d in drift:
+            print(f"{label}: kept the edit made here: {d['key']} (declared {json.dumps(d['declared'], ensure_ascii=False)[:60]})", file=sys.stderr)
+    elif os.path.exists(report):
+        os.remove(report)
 
 
 if __name__ == "__main__":

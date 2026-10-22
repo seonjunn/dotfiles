@@ -15,8 +15,11 @@ Instead each switch merges the managed file into them:
 The managed file applied last time is kept in STATE_JSON to know what was dropped. The first run
 backs up the original next to it (<target>.before-dotfiles).
 
-The target may be JSONC as VS Code writes it (trailing commas). A target with comments is left
-untouched with a warning: writing it back as JSON would drop them.
+A list at the top (VS Code's keybindings.json) merges like a list key.
+
+The target may be JSONC as VS Code writes it (trailing commas, and the header comment VS Code puts in a
+new keybindings.json, which is dropped). A target with any other comment is left untouched with a
+warning: writing it back as JSON would drop it.
 """
 import json
 import os
@@ -25,7 +28,15 @@ import sys
 import tempfile
 
 
+def merge_list(cur, new, prev):
+    dropped = [x for x in (prev if isinstance(prev, list) else []) if x not in new]
+    kept = [x for x in cur if x not in dropped]
+    return kept + [x for x in new if x not in kept]
+
+
 def merge(cur, new, prev):
+    if isinstance(new, list):
+        return merge_list(cur if isinstance(cur, list) else [], new, prev)
     out = dict(cur)
     for k in prev:
         if k not in new:
@@ -36,9 +47,7 @@ def merge(cur, new, prev):
         if isinstance(v, dict) and isinstance(c, dict):
             out[k] = merge(c, v, p if isinstance(p, dict) else {})
         elif isinstance(v, list) and isinstance(c, list):
-            dropped = [x for x in (p if isinstance(p, list) else []) if x not in v]
-            kept = [x for x in c if x not in dropped]
-            out[k] = kept + [x for x in v if x not in kept]
+            out[k] = merge_list(c, v, p)
         else:
             out[k] = v
     return out
@@ -46,6 +55,9 @@ def merge(cur, new, prev):
 
 class HasComments(Exception):
     pass
+
+
+VSCODE_HEADER = "// Place your key bindings in this file to override the defaults"
 
 
 def strip_jsonc(text):
@@ -60,7 +72,10 @@ def strip_jsonc(text):
             out.append(text[i:j + 1])
             i = j + 1
         elif ch == "/" and i + 1 < n and text[i + 1] in "/*":
-            raise HasComments()
+            if not text.startswith(VSCODE_HEADER, i):
+                raise HasComments()
+            j = text.find("\n", i)
+            i = n if j < 0 else j  # VS Code's own header line: drop it
         elif ch == ",":
             j = i + 1
             while j < n and text[j] in " \t\r\n":

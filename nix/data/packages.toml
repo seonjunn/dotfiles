@@ -2,7 +2,7 @@
 # Rule: add a tool here only together with removing its other copies (cargo, ~/bin, /usr/local, apt).
 
 [cli]
-names = ["bat", "eza", "fd", "gh", "gum", "jq", "ripgrep", "yq-go", "nixfmt"]
+names = ["bat", "eza", "fd", "gh", "gum", "jq", "ripgrep", "yq-go", "nixfmt", "uv"]
 
 [dev]  # build tools
 names = ["cmake"]

@@ -180,36 +180,8 @@ link_shared_skills() {
   run ln -sf "$SETUP_DOTFILES_DIR/config/agents/skills" "$target_dir"
 }
 
-install_github_mcp_server_linux() {
-  local dest="$SETUP_HOME/.local/bin/github-mcp-server"
-  local api_url="https://api.github.com/repos/github/github-mcp-server/releases/latest"
-  local arch
-  case "$ARCH" in
-    x86_64)  arch="x86_64" ;;
-    aarch64) arch="arm64" ;;
-    *)       echo "Unsupported arch: $ARCH"; return 1 ;;
-  esac
-  local asset_url
-  asset_url=$(curl -fsSL "$api_url" \
-    | python3 -c "import json,sys; r=json.load(sys.stdin); print(next(a['browser_download_url'] for a in r['assets'] if 'Linux_${arch}' in a['name']))")
-  local tmp
-  tmp=$(mktemp -d)
-  curl -fsSL "$asset_url" | tar -xz -C "$tmp"
-  mkdir -p "$SETUP_HOME/.local/bin"
-  mv "$tmp/github-mcp-server" "$dest"
-  chmod +x "$dest"
-  rm -rf "$tmp"
-}
-
 install_shared_mcp_servers() {
   run uv tool install arxiv-mcp-server
-  if [ "$OS" = "Darwin" ]; then
-    install_macos_formula github-mcp-server
-  elif [ "$OS" = "Linux" ]; then
-    if ! command -v github-mcp-server &>/dev/null; then
-      install_github_mcp_server_linux
-    fi
-  fi
 }
 
 # Write an mcpServers entry into a Claude-format settings JSON (idempotent).

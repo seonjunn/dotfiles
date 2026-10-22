@@ -1,12 +1,14 @@
 # VS Code on a machine with its GUI (opt-in: homeModules.vscode). VS Code itself is installed outside Nix
-# (cask, apt). Settings: config/vscode/settings.json (what every machine shares) and dotfiles.vscode.settings
-# are merged into settings.json each switch; keys only one machine needs (font, zoom, input method commands)
-# stay in its own settings.json. VS Code's Settings Sync should be off: it would be a second source.
+# (cask, apt). VS Code's Settings Sync should be off: it would be a second source.
+# Each switch merges into VS Code's own files (settings-merge.py: only managed keys and entries change, so
+# what the Settings UI adds stays until it is declared):
+# - settings.json: config/vscode/settings.json (shared), then dotfiles.vscode.settings (the machine's own),
+#   then the extension keys below.
+# - keybindings.json: config/vscode/keybindings.{mac,linux}.json (cmd vs ctrl), then dotfiles.vscode.keybindings.
 # Extensions are kept to a declared list:
 # - settings.json gains `extensions.allowed` (only the listed ones may be installed or run; others are
 #   refused and disabled) and `remote.SSH.defaultExtensions` (the `remote` list, installed on every
-#   server on first connect). Merged each switch like Claude's settings (settings-merge.py): the rest of
-#   settings.json stays the Settings UI's.
+#   server on first connect).
 # - each switch installs the missing ones and uninstalls the rest locally (`code` CLI; failures only warn).
 # ui: runs on this machine only (theme, keys, remote connection). remote: runs where the files are, so
 # this machine needs them too for local folders.
@@ -14,16 +16,22 @@
 let
   cfg = config.dotfiles.vscode;
   ids = map lib.toLower (cfg.ui ++ cfg.remote);
+  readJSON = f: builtins.fromJSON (builtins.readFile f);
+  platform = if pkgs.stdenv.isDarwin then "mac" else "linux";
   managed = pkgs.writeText "vscode-settings.json" (builtins.toJSON (
-    builtins.fromJSON (builtins.readFile ../../config/vscode/settings.json) // cfg.settings // {
+    readJSON ../../config/vscode/settings.json // cfg.settings // {
       # Todo Tree cannot find VS Code's bundled ripgrep; use the HM one (cli.nix), same path on every machine
       "todo-tree.ripgrep.ripgrep" = "${config.home.profileDirectory}/bin/rg";
       "extensions.allowed" = lib.genAttrs ids (_: true);
       "remote.SSH.defaultExtensions" = cfg.remote;
     }));
-  settings = if pkgs.stdenv.isDarwin
-    then "$HOME/Library/Application Support/Code/User/settings.json"
-    else "${config.xdg.configHome}/Code/User/settings.json";
+  keys = pkgs.writeText "vscode-keybindings.json" (builtins.toJSON (
+    readJSON ../../config/vscode/keybindings.${platform}.json ++ cfg.keybindings));
+  user = if pkgs.stdenv.isDarwin
+    then "$HOME/Library/Application Support/Code/User"
+    else "${config.xdg.configHome}/Code/User";
+  merge = label: src: dst: state:
+    ''run ${pkgs.python3}/bin/python3 -I ${./settings-merge.py} "${label}" ${src} "${user}/${dst}" "$HOME/.local/state/dotfiles/${state}" 4'';
   sync = pkgs.writeShellScript "vscode-extensions-sync" ''
     code=""
     for c in code /usr/local/bin/code /usr/bin/code "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"; do
@@ -51,12 +59,13 @@ in
   options.dotfiles.vscode = {
     ui = lib.mkOption { type = lib.types.listOf lib.types.str; default = [ ]; description = "Extensions that run on this machine only."; };
     remote = lib.mkOption { type = lib.types.listOf lib.types.str; default = [ ]; description = "Extensions that run where the files are (also installed on servers)."; };
-    settings = lib.mkOption { type = lib.types.attrs; default = { }; description = "More settings.json keys from the machine's config (e.g. per-host values)."; };
+    settings = lib.mkOption { type = lib.types.attrs; default = { }; description = "settings.json keys of this machine (win over the shared ones)."; };
+    keybindings = lib.mkOption { type = lib.types.listOf lib.types.attrs; default = [ ]; description = "keybindings.json entries of this machine, after the platform's."; };
   };
 
   config.home.activation.vscode = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run ${pkgs.python3}/bin/python3 -I ${./settings-merge.py} "vscode settings" ${managed} \
-      "${settings}" "$HOME/.local/state/dotfiles/vscode-settings.json" 4
+    ${merge "vscode settings" managed "settings.json" "vscode-settings.json"}
+    ${merge "vscode keybindings" keys "keybindings.json" "vscode-keybindings.json"}
     if [ -z "''${DRY_RUN:-}" ]; then ${sync}; fi
   '';
 }

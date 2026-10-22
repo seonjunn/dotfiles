@@ -167,5 +167,6 @@
     "terminal.integrated.enableVisualBell": true,
     "vim.insertModeKeyBindings": [],
     "workbench.activityBar.location": "top",
-    "slidev.preview-sync": true
+    "slidev.preview-sync": true,
+    "editor.fontFamily": "FiraCode Nerd Font Mono"
 }

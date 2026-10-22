@@ -77,9 +77,6 @@
     "[json]": {
         "editor.defaultFormatter": "vscode.json-language-features"
     },
-    "[starlark]": {
-        "editor.defaultFormatter": "BazelBuild.vscode-bazel"
-    },
     "notebook.output.wordWrap": true,
     "remote.autoForwardPortsSource": "hybrid",
     "python.analysis.include": [
@@ -115,42 +112,6 @@
     "terminal.integrated.stickyScroll.enabled": false,
     "chat.viewSessions.orientation": "stacked",
     "workbench.sideBar.location": "right",
-    "chat.tools.terminal.autoApprove": {
-        "rm": false,
-        "rmdir": false,
-        "del": false,
-        "kill": false,
-        "curl": false,
-        "wget": false,
-        "eval": false,
-        "chmod": false,
-        "chown": false,
-        "/^Remove-Item\\b/i": false,
-        "bazel build": true,
-        "bazel query": true,
-        "bazel test": true,
-        "bazel run": true,
-        "ls": true,
-        "find": true,
-        "pwd": true,
-        "cd": true,
-        "echo": true,
-        "nm": true,
-        "ldd": true,
-        "cat": true,
-        "grep": true,
-        "./bazel-bin/orchestra/tools/kernel-manifest-inspector": true,
-        "/workspaces/orchestra-project/bazel-bin/orchestra/compiler/orcc": true,
-        "git status": true,
-        "python3 rpc_matmul.py": {
-            "approve": true,
-            "matchCommandLine": true
-        },
-        "python3 test_rpc_opencl.py": {
-            "approve": true,
-            "matchCommandLine": true
-        }
-    },
     "claudeCode.allowDangerouslySkipPermissions": true,
     "claudeCode.initialPermissionMode": "bypassPermissions",
     "claudeCode.preferredLocation": "panel",

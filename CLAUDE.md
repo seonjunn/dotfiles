@@ -68,13 +68,12 @@ Current skills: `paper-review/`, `session-export/`.
 
 ## MCP servers
 
-Claude Code MCP servers are registered in `~/.claude.json` (machine-local, not tracked). `setup.sh` calls `register_claude_mcp` to add them idempotently. Binaries are installed by `install_shared_mcp_servers`. The GitHub server authenticates via `gh auth token` (stored in the OS keychain after `gh auth login`).
+Claude Code MCP servers are registered in `~/.claude.json` (machine-local, not tracked). `setup.sh` calls `register_claude_mcp` to add them idempotently. Binaries are installed by `install_shared_mcp_servers`. There is no GitHub MCP server (dropped 2026-10-22: unused, agents call `gh` directly).
 
 Codex MCP servers are configured in `~/.codex/config.toml`. To avoid clobbering host-specific Codex settings (for example `projects.*.trust_level`), `setup.sh` manages Codex MCP entries via `codex mcp add` instead of symlinking a repo-managed `config.toml`.
 
-`setup.sh` installs required MCP server binaries via `uv tool install` (arxiv) and `install_macos_formula` (github-mcp-server).
+`setup.sh` installs required MCP server binaries via `uv tool install` (arxiv).
 
 | Server | Command | Installed by |
 |---|---|---|
 | `arxiv` | `arxiv-mcp-server` | `uv tool install arxiv-mcp-server` |
-| `github` | `github-mcp-server stdio` | `brew install github-mcp-server` + `gh auth login` |

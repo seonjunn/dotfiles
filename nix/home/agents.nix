@@ -12,6 +12,9 @@ let
       (lib.mapAttrs' (n: _: lib.nameValuePair "${dst}/${n}" { source = dir + "/${n}"; }) (lib.filterAttrs (n: _: !lib.hasPrefix "." n) (builtins.readDir dir))); # skip .gitkeep
 in
 {
+  # The executable is pinned too; account/session data stays outside the store.
+  home.packages = [ (pkgs.callPackage ../packages/ccs { }) ];
+
   home.file = {
     ".claude/CLAUDE.md".source = cfg + "/claude/CLAUDE.md";
     ".claude/statusline.py".source = cfg + "/claude/statusline.py";

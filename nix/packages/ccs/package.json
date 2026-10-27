@@ -1,0 +1,8 @@
+{
+  "name": "ccs-nix",
+  "version": "8.10.0",
+  "private": true,
+  "dependencies": {
+    "@kaitranntt/ccs": "8.10.0"
+  }
+}

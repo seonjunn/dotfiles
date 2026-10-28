@@ -7,6 +7,7 @@
 { config, lib, pkgs, ... }:
 let
   tools = config.dotfiles.uv.tools;
+  locked = config.dotfiles.uv.lockedTools;
   sync = pkgs.writeShellScript "uv-tools-sync" ''
     uv=${pkgs.uv}/bin/uv
     st=$HOME/.local/state/dotfiles; mkdir -p "$st"
@@ -21,6 +22,7 @@ let
     kept=""; gone=""
     for t in $have; do
       has "$t" "$want" && continue
+      has "$t" " ${lib.concatStringsSep " " (builtins.attrNames locked)} " && continue
       if has "$t" "$prev" || force; then "$uv" tool uninstall "$t" >/dev/null 2>&1 && echo "uv: uninstalled $t"
       else kept="$kept $t"; fi
     done
@@ -45,7 +47,27 @@ in
     description = "Python CLI tools installed with `uv tool install` (package names).";
   };
 
+  options.dotfiles.uv.lockedTools = lib.mkOption {
+    type = lib.types.attrsOf (lib.types.submodule {
+      options = {
+        version = lib.mkOption { type = lib.types.str; };
+        requirements = lib.mkOption { type = lib.types.path; };
+      };
+    });
+    default = { };
+    description = "uv tools installed into versioned environments from pinned requirements.";
+  };
+
   config.home.activation.uvTools = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     if [ -z "''${DRY_RUN:-}" ]; then ${sync}; fi
+  '';
+
+  config.home.activation.uvLockedTools = lib.hm.dag.entryAfter [ "uvTools" ] ''
+    if [ -z "''${DRY_RUN:-}" ]; then
+      ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: spec: ''
+        run ${pkgs.python3}/bin/python3 -I ${./uv-locked.py} ${pkgs.uv}/bin/uv \
+          ${lib.escapeShellArg name} ${lib.escapeShellArg spec.version} ${spec.requirements}
+      '') locked)}
+    fi
   '';
 }

@@ -13,7 +13,7 @@ let
 in
 {
   # The executable is pinned too; account/session data stays outside the store.
-  home.packages = [ (pkgs.callPackage ../packages/ccs { }) ];
+  home.packages = [ (pkgs.callPackage ../packages/ccs { }) (pkgs.callPackage ../packages/codex { }) ];
 
   home.file = {
     ".claude/CLAUDE.md".source = cfg + "/claude/CLAUDE.md";

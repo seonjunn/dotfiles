@@ -1,8 +1,16 @@
 #!/usr/bin/env bash
 
+codex_version() {
+  node -p "require('$SETUP_DOTFILES_DIR/nix/packages/codex/package.json').dependencies['@openai/codex']"
+}
+
+codex_binary_current() {
+  command -v codex &>/dev/null && [ "$(codex --version 2>/dev/null)" = "codex-cli $(codex_version)" ]
+}
+
 run_codex() {
-  if ! command -v codex &>/dev/null; then
-    run npm i -g @openai/codex
+  if ! codex_binary_current && ! hm_active; then
+    run npm i -g "@openai/codex@$(codex_version)"
   fi
 
   if ! hm_active; then # Home Manager links these on HM machines
@@ -19,7 +27,7 @@ run_codex() {
 }
 
 verify_codex() {
-  command -v codex &>/dev/null && { hm_active || {
+  codex_binary_current && { hm_active || {
     [ "$(readlink "$SETUP_HOME/.codex/AGENTS.md" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/agents/AGENTS.md" ] \
     && [ "$(readlink "$SETUP_HOME/.agents/skills" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/agents/skills" ]
   }; }

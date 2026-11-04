@@ -1,0 +1,12 @@
+# Generic words that say little on a slide. A project adds its own list with --extra-banned.
+# Format: <severity> <regex>   # comment
+# severity: error = lint fails; warn = look at each hit and justify keeping it. Case-insensitive.
+
+error \bpremises?\b              # vague: name the assumption itself
+error \bmatters\b                # says something is important without saying what
+error \bbound by\b               # shorthand; say which unit or resource and which time
+warn  \b\w+-bound\b              # shorthand; define it if it stays
+warn  \bframe\b                  # vague unless a concrete noun or a named framework
+warn  \bkey insight\b            # inflated; state the observation itself
+warn  \b(novel|paradigm|unlock|leverag\w*|seamless\w*|holistic|game.changing|powerful|crucial\w*)\b  # inflated register
+warn  (?-i:\b[A-Z]\d{1,2}[a-z]?\b) # internal labels like C2a, R1: define on the slide where first used, or drop

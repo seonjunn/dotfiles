@@ -36,7 +36,7 @@ bootstrap_repo_and_reexec() {
     exit 1
   fi
 
-  if [ ! -d "$dotfiles_dir/.git" ]; then
+  if [ ! -e "$dotfiles_dir/.git" ]; then  # -e: in a git worktree .git is a file
     echo "[....] Bootstrap dotfiles repo"
     # Redirect stdin to /dev/null: when invoked via curl|bash, child
     # processes (git, ssh) inherit the pipe as stdin and can consume the
@@ -141,7 +141,7 @@ if [ "$LIST" = true ]; then
   exit 0
 fi
 
-if [ -d "$SETUP_DOTFILES_DIR/.git" ] && [ "$DRY_RUN" = false ]; then
+if [ -e "$SETUP_DOTFILES_DIR/.git" ] && [ "$DRY_RUN" = false ]; then
   as_user git -C "$SETUP_DOTFILES_DIR" pull --ff-only 2>/dev/null || true
   as_user git -C "$SETUP_DOTFILES_DIR" submodule update --init --recursive 2>/dev/null || true
 fi

@@ -31,7 +31,7 @@ bootstrap_repo_and_exec() {
     exit 1
   fi
 
-  if [ ! -d "$dotfiles_dir/.git" ]; then
+  if [ ! -e "$dotfiles_dir/.git" ]; then  # -e: in a git worktree .git is a file
     echo "[....] Bootstrap dotfiles repo"
     # Redirect stdin to /dev/null for the entire block: when invoked via
     # curl|bash, child processes (git, ssh) inherit the pipe as stdin and

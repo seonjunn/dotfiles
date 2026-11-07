@@ -13,9 +13,9 @@ run_codex() {
     run npm i -g "@openai/codex@$(codex_version)"
   fi
 
+  # ~/.codex/AGENTS.md (global instructions) is the user's own; this repo does not ship one.
   if ! hm_active; then # Home Manager links these on HM machines
     run mkdir -p "$SETUP_HOME/.codex" "$SETUP_HOME/.agents"
-    run ln -sf "$SETUP_DOTFILES_DIR/config/agents/AGENTS.md" "$SETUP_HOME/.codex/AGENTS.md"
     link_shared_skills "$SETUP_HOME/.agents/skills"
   fi
   install_shared_mcp_servers
@@ -28,8 +28,7 @@ run_codex() {
 
 verify_codex() {
   codex_binary_current && { hm_active || {
-    [ "$(readlink "$SETUP_HOME/.codex/AGENTS.md" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/agents/AGENTS.md" ] \
-    && [ "$(readlink "$SETUP_HOME/.agents/skills" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/agents/skills" ]
+    [ "$(readlink "$SETUP_HOME/.agents/skills" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/agents/skills" ]
   }; }
 }
 

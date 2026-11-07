@@ -32,8 +32,8 @@ Fish has two sources. Home Manager machines get `nix/home/fish.nix` with aliases
 | `config/fish/` | Fish config and functions |
 | `config/vim/`, `config/tmux/` | Vim and tmux config |
 | `config/bash/` | Bash config |
-| `config/claude/` | Claude Code settings, statusline, commands, agents (global instructions, `~/.claude/CLAUDE.md`, are the user's own and not shipped here) |
-| `config/agents/` | Shared agent prompt (`AGENTS.md`) and skills |
+| `config/claude/` | Claude Code settings, statusline, commands, agents. Global instructions (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`) are the user's own and not shipped here |
+| `config/agents/` | Agent skills shared by Claude Code and Codex |
 | `config/ipython/` | IPython profile |
 | `config/vscode/` | VS Code settings and keybindings (Home Manager `homeModules.vscode`) |
 | `config/desktop/`, `config/desktop-seed/` | i3 desktop configs, and fcitx5 settings seeded once (Home Manager `homeModules.desktop`) |
@@ -56,7 +56,6 @@ Fish has two sources. Home Manager machines get `nix/home/fish.nix` with aliases
 | `~/.claude/statusline.py` | linked (`nix/home/agents.nix`) | symlink → `config/claude/statusline.py` |
 | `~/.claude/settings.json` | managed keys merged in on each switch (`settings-merge.py`); Claude's own keys stay | copied, not symlinked (Claude Code's circular-symlink detection) |
 | `~/.claude/{commands,agents,skills}/` | real directories, one link per entry | same |
-| `~/.codex/AGENTS.md` | linked | symlink → `config/agents/AGENTS.md` |
 | `~/.agents/skills` | linked | symlink → `config/agents/skills` |
 
 ## Skills

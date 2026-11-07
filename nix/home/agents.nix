@@ -1,7 +1,7 @@
 # Instruction files and skills for coding agents (Claude Code, Codex), and the IPython profile.
 # Files are linked. ~/.claude/settings.json is Claude's own (it writes /model, "always allow", ...),
 # so each switch merges config/claude/settings.json into it instead (settings-merge.py).
-# Session state stays the tools' own.
+# Session state stays the tools' own. ~/.claude/CLAUDE.md (global instructions) is the user's own: not shipped here.
 # ~/.claude/{skills,commands,agents} stay real directories with one link per entry, so local
 # additions (e.g. a synced skill) live next to these.
 { lib, pkgs, ... }:
@@ -16,7 +16,6 @@ in
   home.packages = [ (pkgs.callPackage ../packages/ccs { }) (pkgs.callPackage ../packages/codex { }) ];
 
   home.file = {
-    ".claude/CLAUDE.md".source = cfg + "/claude/CLAUDE.md";
     ".claude/statusline.py".source = cfg + "/claude/statusline.py";
     ".codex/AGENTS.md".source = cfg + "/agents/AGENTS.md";
     ".agents/skills".source = cfg + "/agents/skills";

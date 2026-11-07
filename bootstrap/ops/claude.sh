@@ -10,8 +10,8 @@ run_claude() {
 
   run mkdir -p "$SETUP_HOME/.claude"
   # Home Manager links these files on HM machines (dotfiles nix/home/agents.nix, decision D30 in infra).
+  # ~/.claude/CLAUDE.md (global instructions) is the user's own; this repo does not ship one.
   if ! hm_active; then
-    run ln -sf "$SETUP_DOTFILES_DIR/config/claude/CLAUDE.md" "$SETUP_HOME/.claude/CLAUDE.md"
     run ln -sf "$SETUP_DOTFILES_DIR/config/claude/statusline.py" "$SETUP_HOME/.claude/statusline.py"
 
     # settings.json: copy (not symlink) so ~/.claude is never a symlink target
@@ -57,7 +57,7 @@ verify_claude() {
   command -v claude &>/dev/null \
     && [ -f "$SETUP_HOME/.claude/settings.json" ] && ! [ -L "$SETUP_HOME/.claude/settings.json" ] \
     && { hm_active || {
-      [ "$(readlink "$SETUP_HOME/.claude/CLAUDE.md" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/CLAUDE.md" ] \
+      [ "$(readlink "$SETUP_HOME/.claude/statusline.py" 2>/dev/null || true)" = "$SETUP_DOTFILES_DIR/config/claude/statusline.py" ] \
         && [ -d "$SETUP_HOME/.claude/commands" ] && ! [ -L "$SETUP_HOME/.claude/commands" ] \
         && [ -d "$SETUP_HOME/.claude/skills" ] && ! [ -L "$SETUP_HOME/.claude/skills" ] \
         && [ -d "$SETUP_HOME/.claude/agents" ] && ! [ -L "$SETUP_HOME/.claude/agents" ]

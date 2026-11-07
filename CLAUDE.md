@@ -32,7 +32,7 @@ Fish has two sources. Home Manager machines get `nix/home/fish.nix` with aliases
 | `config/fish/` | Fish config and functions |
 | `config/vim/`, `config/tmux/` | Vim and tmux config |
 | `config/bash/` | Bash config |
-| `config/claude/` | Claude Code instructions, settings, statusline, commands, agents |
+| `config/claude/` | Claude Code settings, statusline, commands, agents (global instructions, `~/.claude/CLAUDE.md`, are the user's own and not shipped here) |
 | `config/agents/` | Shared agent prompt (`AGENTS.md`) and skills |
 | `config/ipython/` | IPython profile |
 | `config/vscode/` | VS Code settings and keybindings (Home Manager `homeModules.vscode`) |
@@ -53,7 +53,7 @@ Fish has two sources. Home Manager machines get `nix/home/fish.nix` with aliases
 | `~/.vimrc` | linked (`nix/home/terminal.nix`) | symlink → `config/vim/.vimrc` |
 | tmux | `~/.config/tmux/tmux.conf` (`programs.tmux`) | `~/.tmux.conf` → `config/tmux/.tmux.conf` |
 | `~/.ipython/profile_default` | config file linked | symlink → `config/ipython/profile_default` |
-| `~/.claude/CLAUDE.md`, `statusline.py` | linked (`nix/home/agents.nix`) | symlinks → `config/claude/` |
+| `~/.claude/statusline.py` | linked (`nix/home/agents.nix`) | symlink → `config/claude/statusline.py` |
 | `~/.claude/settings.json` | managed keys merged in on each switch (`settings-merge.py`); Claude's own keys stay | copied, not symlinked (Claude Code's circular-symlink detection) |
 | `~/.claude/{commands,agents,skills}/` | real directories, one link per entry | same |
 | `~/.codex/AGENTS.md` | linked | symlink → `config/agents/AGENTS.md` |

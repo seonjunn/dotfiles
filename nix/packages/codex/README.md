@@ -5,6 +5,10 @@ The common Home Manager profile installs the exact npm release in `package.json`
 The wrapper calls the Nix Node and the published Codex entrypoint. Codex's
 `~/.codex` authentication and sessions remain outside the store.
 
+`codex update` does not touch npm: the wrapper runs `codex-nix-update` if the
+machine has that command (a config pinning this package can provide one that
+does the update below), and otherwise says the version is pinned here.
+
 To update: change the version in `package.json`, run
 `npm install --package-lock-only --ignore-scripts --no-audit --no-fund` here,
 replace `npmDepsHash` with the hash reported by a test build, and validate the

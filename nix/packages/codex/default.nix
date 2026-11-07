@@ -6,6 +6,16 @@
 }:
 let
   manifest = builtins.fromJSON (builtins.readFile ./package.json);
+  # `codex update` would reinstall from npm over a read-only store path. Hand it to codex-nix-update when the
+  # machine has one (a config that pins this package can provide it), else explain where the version lives.
+  updateGuard = ''
+    if [ "''${1-}" = update ]; then
+      shift
+      if command -v codex-nix-update >/dev/null 2>&1; then exec codex-nix-update "$@"; fi
+      echo "codex: this Codex is pinned by Nix (dotfiles nix/packages/codex); update it there (see its README), not with npm." >&2
+      exit 1
+    fi
+  '';
 in
 buildNpmPackage {
   pname = "codex";
@@ -21,6 +31,7 @@ buildNpmPackage {
     mkdir -p "$out/share/codex" "$out/bin"
     cp -r node_modules "$out/share/codex/"
     makeWrapper ${nodejs_24}/bin/node "$out/bin/codex" \
+      --run ${lib.escapeShellArg updateGuard} \
       --add-flags "$out/share/codex/node_modules/@openai/codex/bin/codex.js"
     runHook postInstall
   '';

@@ -15,6 +15,12 @@ let
       echo "codex: this Codex is pinned by Nix (dotfiles nix/packages/codex); update it there (see its README), not with npm." >&2
       exit 1
     fi
+    # Codex's own update notice says `npm install -g`, which cannot update this copy (set
+    # check_for_update_on_startup = false). A config that pins this package can leave a one-line
+    # notice here instead (e.g. "new release, run codex update"); show it when Codex starts.
+    if [ -t 2 ] && [ -s "''${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/notice/codex" ]; then
+      cat "''${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/notice/codex" >&2
+    fi
   '';
 in
 buildNpmPackage {

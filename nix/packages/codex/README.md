@@ -8,6 +8,10 @@ The wrapper calls the Nix Node and the published Codex entrypoint. Codex's
 `codex update` does not touch npm: the wrapper runs `codex-nix-update` if the
 machine has that command (a config pinning this package can provide one that
 does the update below), and otherwise says the version is pinned here.
+Codex's own update notice suggests `npm install -g`, which cannot replace this
+copy; with `check_for_update_on_startup = false` in its config, the wrapper
+instead prints `~/.local/state/dotfiles/notice/codex` at an interactive start
+if a config left one there.
 
 To update: change the version in `package.json`, run
 `npm install --package-lock-only --ignore-scripts --no-audit --no-fund` here,

@@ -64,7 +64,7 @@ verify_claude() {
     }; } \
     && python3 -c "
 import json, sys, glob
-required = {'arxiv', 'github', 'sequential-thinking'}
+required = {'arxiv', 'sequential-thinking'}
 paths = ['$SETUP_HOME/.claude.json'] + glob.glob('$SETUP_HOME/.ccs/instances/*/.claude.json')
 for path in paths:
     try:

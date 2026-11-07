@@ -248,7 +248,7 @@ print(json.dumps(d))
   for ev in "${env_args[@]+"${env_args[@]}"}"; do
     claude_env_flags+=(-e "$ev")
   done
-  claude mcp remove "$name" --scope user 2>/dev/null || true
+  run claude mcp remove "$name" --scope user 2>/dev/null || true
   run claude mcp add --scope user "${claude_env_flags[@]+"${claude_env_flags[@]}"}" "$name" -- "$cmd" "$@"
 
   # Also write to every existing CCS instance config.
@@ -257,6 +257,8 @@ print(json.dumps(d))
     local instance_claude_json
     for instance_claude_json in "$ccs_instances_dir"/*/.claude.json; do
       [ -f "$instance_claude_json" ] || continue
+      # not through `run` (python reads a heredoc), so honour --dry-run here
+      if [ "$DRY_RUN" = true ]; then echo "[dry-run] register MCP '$name' in $instance_claude_json"; continue; fi
       _write_mcp_settings "$instance_claude_json" "$name" "$cmd" "$args_json" "$env_json"
     done
   fi

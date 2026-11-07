@@ -1,10 +1,15 @@
 # arxiv-mcp-server
 
-The version lives in infra `data/uv-tools.toml`. This requirements file pins all
+The root version is pinned in `requirements.in`; `requirements.txt` pins all
 transitive dependencies and wheel hashes for uv on Linux and macOS. Regenerate
 it with `uv pip compile --universal --generate-hashes --output-file requirements.txt
 requirements.in` after changing the root version, then test both platforms.
+A Home Manager config passes the version again (`dotfiles.uv.lockedTools`); keep
+the two equal.
 
-Home Manager's `uv-locked.py` installs a new versioned environment and changes
-the command link after it works. Running MCP processes keep their old environment.
-The container without Home Manager uses the same script and lock directly.
+`nix/home/uv-locked.py` installs a new versioned environment and changes the
+`~/.local/bin/arxiv-mcp-server` link after it works. Running MCP processes keep
+their old environment. Home Manager runs it on each switch (`nix/home/uv.nix`);
+setup.sh runs it on machines without Home Manager (`install_shared_mcp_servers`).
+Claude Code and Codex start that command, never `uvx`, which would prefer an
+older `uv tool install` copy.

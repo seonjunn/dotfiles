@@ -94,5 +94,5 @@ Current skills: `meeting-deck/`, `paper-review/`, `session-export/`.
 
 | Server | Command | Installed by |
 |---|---|---|
-| `arxiv` | `arxiv-mcp-server` (Claude Code starts it through `uvx`) | Home Manager: `nix/home/uv.nix` from the lock in `nix/packages/arxiv/`; setup.sh: `uv tool install arxiv-mcp-server` |
+| `arxiv` | `~/.local/bin/arxiv-mcp-server` (not `uvx`, which would prefer an older `uv tool install` copy) | `nix/home/uv-locked.py` from the lock in `nix/packages/arxiv/`: Home Manager through `nix/home/uv.nix`, setup.sh through `install_shared_mcp_servers` |
 | `sequential-thinking` | `npx -y @modelcontextprotocol/server-sequential-thinking` | fetched by `npx` on first use |

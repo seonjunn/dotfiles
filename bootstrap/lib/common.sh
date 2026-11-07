@@ -180,8 +180,14 @@ link_shared_skills() {
   run ln -sf "$SETUP_DOTFILES_DIR/config/agents/skills" "$target_dir"
 }
 
+# arxiv-mcp-server at the version and hashes pinned in nix/packages/arxiv, exposed as ~/.local/bin/arxiv-mcp-server.
+# Home Manager does the same with the same script (nix/home/uv.nix), so skip it there.
 install_shared_mcp_servers() {
-  run uv tool install arxiv-mcp-server
+  hm_active && return 0
+  local lock="$SETUP_DOTFILES_DIR/nix/packages/arxiv" version
+  version="$(sed -n 's/^arxiv-mcp-server==//p' "$lock/requirements.in")"
+  run python3 -I "$SETUP_DOTFILES_DIR/nix/home/uv-locked.py" "$(command -v uv)" arxiv-mcp-server "$version" \
+    "$lock/requirements.txt"
 }
 
 # Write an mcpServers entry into a Claude-format settings JSON (idempotent).

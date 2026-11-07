@@ -48,8 +48,8 @@ run_claude() {
     done
   fi
   install_shared_mcp_servers
-  register_claude_mcp arxiv -- /bin/sh -c \
-    'PATH=$HOME/.local/bin:/opt/homebrew/bin:$PATH exec uvx arxiv-mcp-server'
+  # The pinned command (install_shared_mcp_servers). Not uvx: it prefers any older `uv tool install` copy.
+  register_claude_mcp arxiv -- /bin/sh -c 'PATH=$HOME/.local/bin:$PATH exec arxiv-mcp-server'
   register_claude_mcp sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking
 }
 

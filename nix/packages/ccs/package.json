@@ -1,8 +1,8 @@
 {
   "name": "ccs-nix",
-  "version": "8.10.0",
+  "version": "8.11.0",
   "private": true,
   "dependencies": {
-    "@kaitranntt/ccs": "8.10.0"
+    "@kaitranntt/ccs": "8.11.0"
   }
 }

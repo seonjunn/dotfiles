@@ -8,6 +8,16 @@
 }:
 let
   manifest = builtins.fromJSON (builtins.readFile ./package.json);
+  # `ccs update` would have npm reinstall CCS over this read-only store path and fail (EACCES).
+  # A machine that rolls out updates provides `ccs-nix-update`; anywhere else, say where updates come from.
+  updateGuard = ''
+    if [ "''${1-}" = update ] || [ "''${1-}" = --update ]; then
+      shift
+      if command -v ccs-nix-update >/dev/null 2>&1; then exec ccs-nix-update "$@"; fi
+      echo "ccs: this CCS is pinned by Nix (dotfiles nix/packages/ccs); update it there (see its README), not with npm." >&2
+      exit 1
+    fi
+  '';
 in
 buildNpmPackage {
   pname = "ccs";
@@ -30,7 +40,10 @@ buildNpmPackage {
       ccs-codex:bin/codex-runtime.js \
       ccsx:bin/codex-runtime.js \
       ccsxp:bin/ccsxp-runtime.js; do
-      makeWrapper ${nodejs_24}/bin/node "$out/bin/''${spec%%:*}" \
+      name=''${spec%%:*}
+      extra=()
+      if [ "$name" = ccs ]; then extra=(--run ${lib.escapeShellArg updateGuard}); fi
+      makeWrapper ${nodejs_24}/bin/node "$out/bin/$name" "''${extra[@]}" \
         --add-flags "$out/lib/node_modules/@kaitranntt/ccs/dist/''${spec#*:}"
     done
     runHook postInstall

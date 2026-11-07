@@ -10,6 +10,11 @@ To update, change the CCS version in `package.json`, regenerate the lock with
 update `npmDepsHash` in `default.nix`. Build on Linux and macOS before rollout;
 check CLI startup and bcrypt loading (the dashboard uses its native module).
 
+`ccs update` (and `ccs --update`) never runs CCS's own npm updater from this package:
+the store path is read-only. If a `ccs-nix-update` command is on `PATH`, the wrapper
+hands the call to it (a machine that rolls out updates can do the steps above there);
+otherwise it prints where updates come from and exits 1.
+
 The standalone bootstrap reads the same release from `package.json`. On Home
 Manager machines, apply the Home Manager configuration instead of installing a
 second global npm copy. Accounts, credentials, profiles and conversations are

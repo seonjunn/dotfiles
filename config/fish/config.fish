@@ -83,7 +83,10 @@ if command -q docker
 	abbr -a dk	"docker"
 end
 
-if command -q codex
+if command -q ccsx
+	abbr -a cdx	"cxs"
+	abbr -a cdxr	"cxs --resume"
+else if command -q codex
 	abbr -a cdx	"codex"
 	abbr -a cdxr	"codex resume"
 end

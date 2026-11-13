@@ -35,5 +35,5 @@ on a machine with home manager, setup.sh leaves the files it owns alone and skip
 
 ## useful stuff
 
-- `dotsetup` — runs setup.sh (do this when it warns you to)
+- `~/.dotfiles/setup.sh` — run it again when the shell warns you to
 - `dotpl` — pull manually (usually not needed, happens on login)

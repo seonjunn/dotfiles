@@ -47,8 +47,6 @@ abbr -a mv	"mv -iv"
 abbr -a cp	"cp -riv"
 abbr -a rm	"rm -Iv"
 abbr -a mkdir	"mkdir -vp"
-abbr -a dotsetup	"$HOME/.dotfiles/setup.sh"
-abbr -a sfish	"source $HOME/.config/fish/config.fish"
 abbr -a vfish	"vim $HOME/.config/fish/config.fish"
 if test $_os != Darwin
 	abbr -a sai "sudo apt install"
@@ -61,40 +59,14 @@ if command -q git
 	abbr -a gps	"git push"
 	abbr -a gpl	"git pull"
 	abbr -a gco	"git checkout"
-	abbr -a gs	"git switch"
 	abbr -a gd	"git diff"
 	abbr -a gl	"git log --branches --graph --decorate --oneline"
 	abbr -a gst	"git status"
 	abbr -a gcl	"git clone"
 end
 
-if command -q ccs
-	abbr -a cld	"ccs"
-	abbr -a clds	"ccs auth default (ccs-lru-account)"
-  abbr -a cldr  "ccs --resume"
-  abbr -a cldd  "ccs --dangerously-skip-permissions"
-  abbr -a cldrd "ccs --resume --dangerously-skip-permissions"
-  abbr -a clda  "ccs auth list"
-else if command -q claude
-	abbr -a cld	"claude"
-end
-
 if command -q docker
 	abbr -a dk	"docker"
-end
-
-if command -q ccsx
-	abbr -a cdx	"cxs"
-	abbr -a cdxr	"cxs --resume"
-else if command -q codex
-	abbr -a cdx	"codex"
-	abbr -a cdxr	"codex resume"
-end
-
-if command -q tmux
-	abbr -a tm	"tmux"
-	abbr -a tma	"tmux attach"
-	abbr -a tml	"tmux ls"
 end
 
 if command -q adb
@@ -104,11 +76,6 @@ if command -q adb
 	abbr -a adsh	"adb shell"
 	set -gx ANDROID_ADB_SERVER_PORT 5037
 	set -gx ADB_SERVER_PORT 5037
-end
-
-if command -q python3
-	abbr -a py	"python3"
-	abbr -a pip	"python3 -m pip"
 end
 
 if command -q eza
@@ -126,7 +93,7 @@ if status is-interactive; and set -q SSH_CONNECTION
 	echo (date '+%F %T') "ssh+interactive: invoking dotpl" >> ~/.dotfiles/.dotpl.log
 	bash -c 'fish -c dotpl > /dev/null 2>&1 & disown' 2>/dev/null
 	if test -f ~/.dotfiles/.setup-needed
-		echo "dotfiles: setup.sh changed — run dotsetup (or ~/.dotfiles/setup.sh)"
+		echo "dotfiles: setup.sh changed — run ~/.dotfiles/setup.sh"
 	end
 	if test -f ~/.dotfiles/.dotpl-failed
 		echo "dotfiles: auto-pull is failing — see ~/.dotfiles/.dotpl.log"

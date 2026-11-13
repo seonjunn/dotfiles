@@ -12,7 +12,7 @@ function dotpl
 	rm -f $repo/.dotpl-failed
 	if git -C $repo diff --name-only $before HEAD | string match -rq '^setup\.sh$|^bootstrap/'
 		touch $repo/.setup-needed
-		echo "setup changed — re-run dotsetup (or ~/.dotfiles/setup.sh)"
+		echo "setup changed — re-run ~/.dotfiles/setup.sh"
 		echo (date '+%F %T') "setup changed, flag set" >> $log
 	else
 		echo (date '+%F %T') "ok" >> $log

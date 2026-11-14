@@ -13,6 +13,8 @@ run_claude() {
   # ~/.claude/CLAUDE.md (global instructions) is the user's own; this repo does not ship one.
   if ! hm_active; then
     run ln -sf "$SETUP_DOTFILES_DIR/config/claude/statusline.py" "$SETUP_HOME/.claude/statusline.py"
+    run mkdir -p "$SETUP_HOME/.claude/hooks"
+    run ln -sf "$SETUP_DOTFILES_DIR/config/claude/hooks/memory-inbox.py" "$SETUP_HOME/.claude/hooks/memory-inbox.py"
 
     # settings.json: copy (not symlink) so ~/.claude is never a symlink target
     # inside a git repo, which triggers Claude Code's circular-symlink detection.

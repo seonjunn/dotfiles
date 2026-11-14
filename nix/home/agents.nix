@@ -18,6 +18,7 @@ in
 
   home.file = {
     ".claude/statusline.py".source = cfg + "/claude/statusline.py";
+    ".claude/hooks/memory-inbox.py".source = cfg + "/claude/hooks/memory-inbox.py";
     ".agents/skills".source = cfg + "/agents/skills";
     ".ipython/profile_default/ipython_config.py".source = cfg + "/ipython/profile_default/ipython_config.py";
   }

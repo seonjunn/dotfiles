@@ -48,6 +48,20 @@
       "Bash(docker images *)"
     ]
   },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f \"$HOME/.claude/hooks/memory-inbox.py\" ] && python3 \"$HOME/.claude/hooks/memory-inbox.py\" || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
   "statusLine": {
     "type": "command",
     "command": "python3 \"$HOME/.claude/statusline.py\"",

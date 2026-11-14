@@ -4,11 +4,21 @@
 # Real deletion: `rm-fr` (expands to plain /bin/rm; add -rf yourself). Items older than dotfiles.trash.days (30) are emptied automatically
 # (Linux; servers with full disks use fewer).
 #   Linux: trash-cli, freedesktop trash (~/.local/share/Trash, shared with the file manager); restore: trash-restore
+#          Files on lab servers' /data* disks go to <disk>/users/<me>/.trash instead of <disk>/.Trash-<uid>
+#          (only users/, projects/, docker/ may sit at the top of a data disk; see bin/rm-trash).
 #   macOS: /usr/bin/trash, Finder trash; restore: Finder's "Put Back"
 { config, lib, pkgs, ... }:
 let
   trashRm = "${../..}/bin/rm-trash";
   days = toString config.dotfiles.trash.days;
+  # the standard trash dirs, then each /data*/users/<me>/.trash that rm-trash uses on lab servers
+  emptyTrash = pkgs.writeShellScript "trash-empty-all" ''
+    ${pkgs.trash-cli}/bin/trash-empty -f ${days}
+    for d in /data*/users/"$(id -un)"/.trash; do
+      [ -d "$d" ] && ${pkgs.trash-cli}/bin/trash-empty -f --trash-dir "$d" ${days}
+    done
+    exit 0
+  '';
 in
 {
   options.dotfiles.trash.days = lib.mkOption {
@@ -42,7 +52,7 @@ in
         Unit.Description = "Empty trash items older than ${days} days";
         Service = {
           Type = "oneshot";
-          ExecStart = "${pkgs.trash-cli}/bin/trash-empty -f ${days}";
+          ExecStart = "${emptyTrash}";
         };
       };
       systemd.user.timers.trash-empty = {

@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+"""trash-restore-data: trash-restore for the trash that rm-trash keeps on lab servers' data disks.
+
+rm-trash puts files from a /data* disk in <disk>/users/<me>/.trash (only users/, projects/, docker/ may sit at
+the top of a data disk), and trash-cli's trash-restore does not look there. Same format (freedesktop trash):
+files/<name> and info/<name>.trashinfo.
+
+  trash-restore-data            list the items (newest last) and ask which to put back: numbers, ranges, "all"
+  trash-restore-data PATH       only items that were under PATH (like trash-restore PATH)
+
+An item goes back to the path it came from; if something is there already, it is skipped and left in the trash.
+Items older than dotfiles.trash.days (30) are emptied daily, as in the normal trash.
+"""
+import glob
+import os
+import shutil
+import sys
+from urllib.parse import unquote
+
+
+def items(under):
+    me = os.environ.get("SUDO_USER") or os.environ.get("USER") or os.getlogin()
+    out = []
+    for td in sorted(glob.glob(f"/data*/users/{me}/.trash")):
+        for info in glob.glob(os.path.join(td, "info", "*.trashinfo")):
+            fields = {}
+            with open(info, errors="replace") as f:
+                for line in f:
+                    k, _, v = line.rstrip("\n").partition("=")
+                    fields[k] = v
+            path = unquote(fields.get("Path", ""))
+            if not path:
+                continue
+            if not os.path.isabs(path):  # trashinfo of a per-disk trash may be relative to the disk's top
+                path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(td))), path)
+            name = os.path.basename(info)[: -len(".trashinfo")]
+            src = os.path.join(td, "files", name)
+            if not (os.path.exists(src) or os.path.islink(src)):
+                continue
+            if under and not (path == under or path.startswith(under.rstrip("/") + "/")):
+                continue
+            out.append((fields.get("DeletionDate", "?"), path, src, info))
+    return sorted(out)
+
+
+def pick(answer, n):
+    if answer.strip() == "all":
+        return list(range(n))
+    chosen = []
+    for part in answer.replace(",", " ").split():
+        a, _, b = part.partition("-")
+        lo, hi = int(a), int(b or a)
+        chosen += [i for i in range(lo, hi + 1) if 0 <= i < n]
+    return sorted(set(chosen))
+
+
+def main():
+    under = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else ""
+    found = items(under)
+    if not found:
+        print("No files in the data-disk trash" + (f" under {under}" if under else "") + ".")
+        return 0
+    for i, (date, path, _, _) in enumerate(found):
+        print(f"{i:4} {date.replace('T', ' ')} {path}")
+    try:
+        answer = input("What file to restore [0..%d, ranges, all; empty to cancel]: " % (len(found) - 1))
+    except EOFError:
+        return 0
+    if not answer.strip():
+        return 0
+    rc = 0
+    for i in pick(answer, len(found)):
+        _, path, src, info = found[i]
+        if os.path.exists(path) or os.path.islink(path):
+            print(f"skipped (already exists): {path}", file=sys.stderr)
+            rc = 1
+            continue
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        shutil.move(src, path)
+        os.remove(info)
+        print(f"restored: {path}")
+    return rc
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -6,8 +6,8 @@
 #   Lab servers' data disks (/data*): trash-cli would make <disk>/.Trash-<uid> at the top of the disk, but only
 #          users/, projects/ and docker/ may sit there (snuhcs/server docs/disk.md). So a file on a /data* disk goes
 #          to <disk>/users/<me>/.trash instead (same disk, nothing copied), emptied by the same daily timer.
-#          trash-restore does not look there: list with `trash-list --trash-dir <that dir>`, restore by moving
-#          files/<name> back to the Path in info/<name>.trashinfo (then delete that .trashinfo).
+#          trash-restore does not look there: restore with `trash-restore-data` (bin/), list with
+#          `trash-list --trash-dir <that dir>`.
 # rm's options (-r -f -i -v -d -I, combined like -rf) are accepted and ignored, so `rm -rf dir` works.
 # Real deletion: `rm-fr` (plain /bin/rm). Under sudo the files go to root's trash (on /data*: the sudo user's).
 set -e

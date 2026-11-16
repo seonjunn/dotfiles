@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The devcontainer CLI for the project around the current directory (its git root), with my Features, state and
+# The devcontainer CLI for the project around the current directory (its git root), with my Feature, mounts and
 # dotfiles added (~/.config/devc/config.json, written by Home Manager from nix/home/devcontainer.nix).
 #   devc up [ARGS]       create or start the container (ARGS go to `devcontainer up`)
 #   devc rebuild [ARGS]  the same, replacing the container (~/.agents and the project's ~/.local, ~/.cache stay)
@@ -7,7 +7,7 @@
 #                        ARGS go to ssh after the destination (options or a command)
 #   devc stdio FOLDER    one ssh connection to FOLDER's container over stdin/stdout: the ProxyCommand that
 #                        `devc ssh` and other machines' ssh aliases use (infra data/hosts.toml `container`)
-# Tools: on a Linux docker host with Nix, the host's Home Manager profile (read-only /nix, Feature host-nix);
+# Tools: on a Linux docker host with Nix, the host's Home Manager profile (/nix mounted read-only);
 # elsewhere the Feature installs the same releases. The project's ~/.local and ~/.cache are directories on this
 # host, <root>/<project>/{local,cache}: root /data2/users/$USER/containers where that exists, else
 # ~/.local/share/devc (DEVC_ROOT overrides).
@@ -43,7 +43,7 @@ container() { # the running container created for folder $1
 	echo "$id"
 }
 
-nix_profile() { # this host's profile, when a container can run it: Linux, and the link lives where host-nix mounts
+nix_profile() { # this host's profile, when a container can run it: Linux, and the link lives in the profiles dir devc mounts
 	local p
 	[ "$(uname -s)" = Linux ] && [ -d /nix/store ] || return 1
 	p=$(readlink "$HOME/.nix-profile" 2>/dev/null) || return 1
@@ -62,38 +62,45 @@ up() {
 	d=$(project "$f")
 	mkdir -p "$d/local" "$d/cache"
 	[ -e "$d/.folder" ] || echo "$f" >"$d/.folder"
-	local binds=(local cache)
+	# Every mount is devc's (a Feature may not declare an external volume). Volumes are `external`: in a compose
+	# project a plain one becomes a new <project>_<name> volume that hides the real one (tested).
+	local h=/home/vscode
+	local want=(
+		"type=volume,source=$USER-agents,target=$h/.agents,external=true" # agent sessions, shared by my containers
+		"type=volume,source=$USER-config,target=$h/.config,external=true"
+		"type=bind,source=$d/local,target=$h/.local" # the project's own state, a directory on this host
+		"type=bind,source=$d/cache,target=$h/.cache"
+	)
+	docker volume create "$USER-agents" >/dev/null # creating one that exists changes nothing
+	docker volume create "$USER-config" >/dev/null
 	if profile=$(nix_profile); then
-		features=$(jq -c --arg p "$profile" '{(.personal): {nixProfile: $p}, (.hostNix): {}}' "$CONFIG")
-		# What the Feature host-nix mounts: read-only binds made as volumes, because a compose project drops the
-		# readonly flag of a bind (tested) and the container's root must never write the host's /nix. The Feature's
-		# start script links ~/.ssh/config into that profile.
+		features=$(jq -c --arg p "$profile" '{(.personal): {nixProfile: $p}}' "$CONFIG")
+		# The host's /nix and Nix profiles, read-only: volumes that are read-only binds, because --mount has no
+		# read-only flag and the container's root must never write the host's /nix. The Feature's start script links
+		# ~/.ssh/config into the profile.
 		ro_volume "$USER-host-nix" /nix
 		ro_volume "$USER-host-nix-profiles" "$HOME/.local/state/nix/profiles"
+		want+=("type=volume,source=$USER-host-nix,target=/nix,external=true"
+			"type=volume,source=$USER-host-nix-profiles,target=$HOME/.local/state/nix/profiles,external=true")
 	else
 		features=$(jq -c '{(.personal): .releases}' "$CONFIG")
 		# --mount has no read-only flag, so the container's root could write the host's file (on malphite a
-		# root-owned Nix store file, reached through OrbStack's file sharing).
-		binds+=(ssh)
+		# root-owned Nix store file, reached through OrbStack's file sharing; accepted, D43).
+		want+=("type=bind,source=$HOME/.ssh/config,target=$h/.ssh/config")
 	fi
-	# The Feature mounts these as external volumes (a compose project would otherwise make its own copies);
-	# creating one that exists changes nothing.
-	docker volume create "$USER-agents" >/dev/null
-	docker volume create "$USER-config" >/dev/null
-	# A project that mounts one of these itself keeps its own: the CLI does not merge --mount with the project's
-	# mounts, and docker refuses two mounts at one place.
-	local taken mounts=() t src dst
+	# A project that mounts one of these places itself keeps its own: the CLI does not merge --mount with the
+	# devcontainer.json mounts, and docker refuses two mounts at one place. (A compose file's volumes are not in
+	# this list; compose itself lets the later mount at the same place win.)
+	local taken mounts=() m dst
 	taken=$(devcontainer read-configuration --workspace-folder "$f" 2>/dev/null | jq -r '.configuration.mounts[]? |
 		if type == "string" then (capture("(target|dst|destination)=(?<t>[^,]+)").t) else .target end')
-	for t in "${binds[@]}"; do
-		case $t in
-			ssh) src=$HOME/.ssh/config dst=/home/vscode/.ssh/config ;;
-			*) src=$d/$t dst=/home/vscode/.$t ;;
-		esac
+	for m in "${want[@]}"; do
+		dst=${m#*target=}
+		dst=${dst%%,*}
 		if grep -qxF "$dst" <<<"$taken"; then
-			echo "devc: the project mounts $dst itself; $src is not used" >&2
+			echo "devc: the project mounts $dst itself; devc's mount there is left out" >&2
 		else
-			mounts+=(--mount "type=bind,source=$src,target=$dst")
+			mounts+=(--mount "$m")
 		fi
 	done
 	# --no-lockfile: the CLI would otherwise write .devcontainer/devcontainer-lock.json into the (team's) project

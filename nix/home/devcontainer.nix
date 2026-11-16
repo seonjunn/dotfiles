@@ -11,7 +11,6 @@ in
 {
   xdg.configFile."devc/config.json".text = builtins.toJSON {
     personal = feature "personal";
-    hostNix = feature "host-nix";
     releases = {
       fish = config.programs.fish.package.version;
       tmux = config.programs.tmux.package.version;

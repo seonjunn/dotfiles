@@ -6,6 +6,8 @@
 # nix/home/devcontainer.nix). Every step checks the current state first, so it is safe to rerun, also on volumes
 # and directories an earlier container already filled.
 set -euo pipefail
+PULL=0
+[ "${1:-}" = --pull ] && PULL=1
 
 DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export DOTFILES_DIR="$DOTFILES"
@@ -58,19 +60,28 @@ if [ -d "$AGENTS" ]; then
 else
 	say "no ~/.agents volume: agent state stays in this container and a rebuild loses it" >&2
 fi
+[ "$(git -C "$DOTFILES" remote get-url origin)" = https://github.com/seonjunn/dotfiles ] &&
+	git -C "$DOTFILES" remote set-url origin git@github.com:seonjunn/dotfiles.git
+
+# Tools come from the Feature only. Without it the setup.sh steps below would install a second copy. When devc
+# creates a container that is an error; on a later pull (--pull, infra-update's PULL_TARGETS) the container may
+# simply predate the Feature: the links above are done, the rest waits for a rebuild.
+skip() {
+	if [ "$PULL" = 1 ]; then
+		say "$1; settings steps skipped until then" >&2
+		exit 0
+	fi
+	say "$1" >&2
+	exit 1
+}
+if [ ! -f /opt/personal/versions ]; then
+	skip "this image has no personal Feature (/opt/personal): rebuild the container with \`devc rebuild\`"
+fi
+# Only a container devc made has the project's own ~/.local; an older one keeps these where they are.
 mkdir -p "$HOME/.local"
 for name in "${PROJECT_HOMES[@]}"; do
 	link_home "$name" "$HOME/.local"
 done
-
-[ "$(git -C "$DOTFILES" remote get-url origin)" = https://github.com/seonjunn/dotfiles ] &&
-	git -C "$DOTFILES" remote set-url origin git@github.com:seonjunn/dotfiles.git
-
-# Tools come from the Feature only. Without it the setup.sh steps below would install a second copy.
-if [ ! -f /opt/personal/versions ]; then
-	say "this image has no personal Feature (/opt/personal): create the container with \`devc up\`" >&2
-	exit 1
-fi
 # The npm CLIs are pinned here too (nix/packages). If the container's are older, the codex step would try to
 # npm-install the new release over them.
 tools=$(sed -n 's/^tools=//p' /opt/personal/versions)
@@ -87,10 +98,9 @@ for pin in codex:@openai/codex ccs:@kaitranntt/ccs; do
 done
 if [ -n "$stale" ]; then
 	if [ "$tools" = image ]; then
-		say "the image is older than dotfiles:$stale. Rebuild the container (devc rebuild); ~/.agents and ~/.local stay" >&2
+		skip "the image is older than dotfiles:$stale. Rebuild the container (devc rebuild); ~/.agents and ~/.local stay"
 	else
-		say "the docker host's Home Manager profile is older than dotfiles:$stale. Update the host (infra-update); the container follows it without a rebuild" >&2
+		skip "the docker host's Home Manager profile is older than dotfiles:$stale. Update the host (infra-update); the container follows it without a rebuild"
 	fi
-	exit 1
 fi
 bash "$DOTFILES/setup.sh" git dotfiles ipython claude codex </dev/null

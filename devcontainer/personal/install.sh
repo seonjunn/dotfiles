@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The dev container Feature `personal`, run as root at image build time (cached with the image). Attached only by
 # dotfiles bin/devc. The tools come one of two ways, never both:
-# - nixProfile set (a Linux docker host with Nix; devc also attaches the Feature host-nix, which mounts /nix and the
+# - nixProfile set (a Linux docker host with Nix; bin/devc also mounts the host's /nix and the user's Nix
 #   profile read-only): the host's current Home Manager profile goes in PATH after the image's own dirs, so the
 #   project's tools (git, cmake, node, ...) win and mine fill in what the image lacks. Nothing is installed.
 # - otherwise (malphite's OrbStack): release binaries at the versions given as options, which dotfiles
@@ -63,7 +63,7 @@ install -d "$PREFIX/bin"
 
 if [ -n "$NIXPROFILE" ]; then
 	say "tools from the docker host's Nix profile $NIXPROFILE"
-	ln -sfn "$NIXPROFILE" "$PREFIX/nix-profile" # last in PATH (containerEnv); resolves once host-nix has mounted it
+	ln -sfn "$NIXPROFILE" "$PREFIX/nix-profile" # last in PATH (containerEnv); resolves once devc has mounted it
 	FISH_BIN=$PREFIX/nix-profile/bin/fish
 else
 	# One row per release binary: name | archive URL | programs taken from the archive.
@@ -208,7 +208,7 @@ fi
 # ~/.local/state, so two containers never share them.
 orca=$HOME_EXPECTED/.local/state/orca
 if [ -n "$NIXPROFILE" ]; then
-	# ~/.ssh/config: the host's, from its current Home Manager generation (read-only through host-nix), unless the
+	# ~/.ssh/config: the host's, from its current Home Manager generation (read-only, mounted by devc), unless the
 	# project mounts one itself. Without Nix, bin/devc binds the host's file instead.
 	sshconfig="ln -sfn $(dirname "$NIXPROFILE")/home-manager/home-files/.ssh/config $HOME_EXPECTED/.ssh/config"
 	sshconfig="grep -qs ' $HOME_EXPECTED/.ssh/config ' /proc/mounts || runuser -u $USER_NAME -- $sshconfig"

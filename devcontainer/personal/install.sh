@@ -179,11 +179,18 @@ AuthorizedKeysFile .ssh/authorized_keys $PREFIX/authorized_keys $state/authorize
 AllowAgentForwarding yes
 Subsystem sftp internal-sftp
 EOF
-# The project's state files are the user's (they sit in a directory of the docker host's user).
+# The project's state files are the user's (they sit in a directory of the docker host's user). The scripts below run
+# as root (the entrypoint of an image-based project, sshd-stdio) or as that user already (the entrypoint when a compose
+# service sets `user: vscode`); as-user covers both.
+cat >"$PREFIX/as-user" <<EOF
+#!/bin/sh
+if [ "\$(id -u)" = 0 ]; then exec runuser -u $USER_NAME -- env HOME=$HOME_EXPECTED "\$@"; fi
+exec "\$@"
+EOF
 cat >"$PREFIX/state" <<EOF
 #!/bin/sh
 # make this project's state dirs and sshd host key, as the user
-runuser -u $USER_NAME -- sh -c 'umask 077; mkdir -p "$state" "$HOME_EXPECTED/.local/state/orca" &&
+$PREFIX/as-user sh -c 'umask 077; mkdir -p "$state" "$HOME_EXPECTED/.local/state/orca" &&
 	{ [ -f "$state/ssh_host_ed25519_key" ] || ssh-keygen -q -t ed25519 -N "" -f "$state/ssh_host_ed25519_key"; }'
 EOF
 # sshd gives a session a fixed environment; pass the container's PATH (dab's, then the image's, then mine) and
@@ -199,7 +206,7 @@ chmod 0755 /run/sshd
 $PREFIX/state
 exec /usr/sbin/sshd -i -f $PREFIX/sshd_config -o "SetEnv=PATH=\$PATH DAB_HOME=\$DAB_HOME"
 EOF
-chmod 0755 "$PREFIX/state" "$PREFIX/bin/sshd-stdio"
+chmod 0755 "$PREFIX/as-user" "$PREFIX/state" "$PREFIX/bin/sshd-stdio"
 # Each ssh login points ~/.ssh/agent.sock at the agent it forwarded, as the servers do (dotfiles server.nix): shells
 # and tmux panes use that fixed path (config/fish/config.fish), so they keep working after the session that
 # started them ends. sshd runs this file for every session, whatever the user's shell.
@@ -212,15 +219,16 @@ else
 	say "kept the image's own /etc/ssh/sshrc: ~/.ssh/agent.sock is not repointed on ssh login"
 fi
 
-# Container start (the entrypoint, root, every start): the project's state, and its Orca server (orcad) when the
-# project has one installed in ~/.local/opt/orcad. orcad keeps its data, lock and log in the project's
-# ~/.local/state (orca-hub's defaults), so two containers never share them.
+# Container start (the entrypoint, every start; root, or the user when a compose service sets `user:`): the
+# project's state, and its Orca server (orcad) when the project has one installed in ~/.local/opt/orcad. orcad
+# keeps its data, lock and log in the project's ~/.local/state (orca-hub's defaults), so two containers never share
+# them. Nothing here needs root: sshd's own needs are met by sshd-stdio, which docker exec runs as root.
 orca=$HOME_EXPECTED/.local/state/orca
 if [ -n "$NIXPROFILE" ]; then
 	# ~/.ssh/config: the host's, from its current Home Manager generation (read-only, mounted by devc), unless the
 	# project mounts one itself. Without Nix, bin/devc binds the host's file instead.
 	sshconfig="ln -sfn $(dirname "$NIXPROFILE")/home-manager/home-files/.ssh/config $HOME_EXPECTED/.ssh/config"
-	sshconfig="grep -qs ' $HOME_EXPECTED/.ssh/config ' /proc/mounts || runuser -u $USER_NAME -- $sshconfig"
+	sshconfig="grep -qs ' $HOME_EXPECTED/.ssh/config ' /proc/mounts || $PREFIX/as-user $sshconfig"
 else
 	sshconfig=:
 fi
@@ -230,21 +238,26 @@ umask 022
 $PREFIX/state
 $sshconfig
 hub=$HOME_EXPECTED/.local/opt/orcad/orca-hub
-status=/run/personal-orcad
+status=$orca/status # what this start did about orcad; devc up prints it
+rm -f "\$status"
+note() { # message: to docker logs, and as the user to \$status
+	echo "\$1" >&2
+	$PREFIX/as-user sh -c 'echo "\$1" >"\$2"' sh "\$1" "\$status"
+}
 if [ -x "\$hub" ]; then
 	# nothing runs yet in a container that is starting: a lock in the project's state is from an orcad that is gone
 	rm -f "$orca/orcad.lock"
 	# The port is the project's declared one (leblanc's tunnel points at it), never another: without one, or when
-	# it is taken, orcad stays down and says why (docker logs and \$status, which devc up prints).
+	# it is taken, orcad stays down and says why.
 	port=\$(cat $PREFIX/orcad-port 2>/dev/null)
 	if [ -z "\$port" ]; then
-		echo "orcad not started: no port declared for this project (infra data/orca.toml)" | tee \$status >&2
+		note "orcad not started: no port declared for this project (infra data/orca.toml)"
 	elif ! python3 -c 'import socket, sys; socket.socket().bind(("127.0.0.1", int(sys.argv[1])))' "\$port" 2>/dev/null; then
-		echo "orcad not started: port \$port is taken (another container on the host's network?)" | tee \$status >&2
+		note "orcad not started: port \$port is taken (another container on the host's network?)"
 	else
-		echo "orcad starting on 127.0.0.1:\$port" >\$status
+		note "orcad starting on 127.0.0.1:\$port"
 		# as the user, the log too: files in ~/.local belong to the docker host's user
-		runuser -u $USER_NAME -- env HOME=$HOME_EXPECTED sh -c '"\$0" start >>"$orca/start.log" 2>&1' "\$hub" &
+		$PREFIX/as-user sh -c '"\$0" start >>"$orca/start.log" 2>&1' "\$hub" &
 	fi
 fi
 exec "\$@"

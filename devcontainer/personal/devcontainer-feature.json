@@ -1,6 +1,6 @@
 {
 	"id": "personal",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"name": "seonjunn's tools",
 	"description": "My shell and agent CLIs at the releases my machines run, fish as the login shell, an sshd without a port, and my Orca server when the project has one. Attached by dotfiles bin/devc, which also does all the mounts (shared ~/.agents and ~/.config, the project's ~/.local and ~/.cache, the host's /nix read-only); settings come from bootstrap/container.sh.",
 	"documentationURL": "https://github.com/seonjunn/dotfiles/tree/master/devcontainer/personal",

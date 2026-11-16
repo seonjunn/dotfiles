@@ -114,7 +114,7 @@ up() {
 		--dotfiles-target-path "$(jq -r .dotfiles.targetPath "$CONFIG")" \
 		--dotfiles-install-command "$(jq -r .dotfiles.installCommand "$CONFIG")" "$@"
 	# what the Feature's start script did about orcad (only when the project has one installed)
-	docker exec "$(container "$f")" cat /run/personal-orcad 2>/dev/null | sed 's/^/devc: /' >&2 || true
+	docker exec "$(container "$f")" cat /home/vscode/.local/state/orca/status 2>/dev/null | sed 's/^/devc: /' >&2 || true
 }
 
 guard() { # before `rebuild` removes FOLDER's container: what lives only in its own layer (no volume or bind) is lost

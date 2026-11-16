@@ -12,18 +12,22 @@
     adb-shell = { url = "github:matan-h/adb-shell"; flake = false; };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, adb-shell, ... }: {
+  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, adb-shell, ... }:
+    let
+      # packages.toml [unstable] come from nixpkgs-unstable; every module that installs them includes this
+      unstable = import ./nix/home/unstable.nix { inherit nixpkgs-unstable; };
+    in {
     # Machine-agnostic modules. A machine's own config can import these and add its specifics.
     homeModules = {
-      base = ./nix/home/base.nix;
+      base = { imports = [ ./nix/home/base.nix unstable ]; };
       # base for an account on a shared server: login shell stays bash and hands over to fish
-      server = ./nix/home/server.nix;
+      server = { imports = [ ./nix/home/server.nix unstable ]; };
       # opt-in: i3 desktop configs and scripts (Linux)
       desktop = ./nix/home/desktop.nix;
       # opt-in: VS Code on a GUI machine: settings.json keys and local extensions follow dotfiles.vscode.{ui,remote}
       vscode = ./nix/home/vscode.nix;
       # opt-in: Android device tools (adb, fastboot, adb-shell); not part of base
-      android = import ./nix/home/android.nix { inherit adb-shell nixpkgs-unstable; };
+      android = { imports = [ (import ./nix/home/android.nix { inherit adb-shell; }) unstable ]; };
     };
   };
 }

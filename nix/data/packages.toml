@@ -1,13 +1,16 @@
 # Packages installed by Home Manager, read by nix/home/*.nix (data only). Names are nixpkgs attributes.
 # Rule: add a tool here only together with removing its other copies (cargo, ~/bin, /usr/local, apt).
 
+[unstable]  # taken from nixpkgs-unstable (unstable.nix): tools whose newest release matters; the rest stay stable
+names = ["uv", "devcontainer", "android-tools"]
+
 [cli]
 names = ["bat", "eza", "fd", "gh", "gum", "jq", "ripgrep", "yq-go", "nixfmt", "uv"]
 
 [dev]  # build tools
 names = ["cmake", "devcontainer"]  # devcontainer: `devcontainer build/up` CLI; needs the machine's docker
 
-[android]  # devices over adb (android.nix, from nixpkgs-unstable); SDK/NDK for builds are not here
+[android]  # devices over adb (android.nix); SDK/NDK for builds are not here
 names = ["android-tools"]  # adb, fastboot
 
 [editor]

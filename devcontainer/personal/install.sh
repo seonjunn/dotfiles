@@ -52,6 +52,14 @@ apt_add() { # packages not installed yet; prints the ones it installed
 }
 # git and python3: bootstrap/container.sh needs them before PATH has anything else; sshd: see below
 apt_add ca-certificates curl git python3 openssh-server xz-utils >/dev/null
+# en_US.UTF-8, which my shells export as LC_ALL: images like ubuntu:22.04 lack it, and bash warns at every start.
+# Debian generates what /etc/locale.gen lists; Ubuntu also takes the name as an argument.
+if ! locale -a 2>/dev/null | grep -qix 'en_us.utf-\?8'; then
+	say "locale en_US.UTF-8"
+	apt_add locales >/dev/null
+	sed -i 's/^# *\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen
+	locale-gen en_US.UTF-8 >/dev/null
+fi
 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
@@ -178,7 +186,8 @@ cat >"$PREFIX/state" <<EOF
 runuser -u $USER_NAME -- sh -c 'umask 077; mkdir -p "$state" "$HOME_EXPECTED/.local/state/orca" &&
 	{ [ -f "$state/ssh_host_ed25519_key" ] || ssh-keygen -q -t ed25519 -N "" -f "$state/ssh_host_ed25519_key"; }'
 EOF
-# sshd gives a session a fixed PATH; pass the container's (the Nix profile or $PREFIX/bin first).
+# sshd gives a session a fixed environment; pass the container's PATH (dab's, then the image's, then mine) and
+# DAB_HOME (containerEnv).
 cat >"$PREFIX/bin/sshd-stdio" <<EOF
 #!/bin/sh
 set -e
@@ -188,7 +197,7 @@ umask 022
 mkdir -p /run/sshd
 chmod 0755 /run/sshd
 $PREFIX/state
-exec /usr/sbin/sshd -i -f $PREFIX/sshd_config -o "SetEnv=PATH=\$PATH"
+exec /usr/sbin/sshd -i -f $PREFIX/sshd_config -o "SetEnv=PATH=\$PATH DAB_HOME=\$DAB_HOME"
 EOF
 chmod 0755 "$PREFIX/state" "$PREFIX/bin/sshd-stdio"
 # Each ssh login points ~/.ssh/agent.sock at the agent it forwarded, as the servers do (dotfiles server.nix): shells

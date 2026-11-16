@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Personal settings inside a dev container, at create time. The Feature devcontainer/personal put my tools in the
 # image (or the docker host's Nix profile first in PATH); bin/devc mounted the shared ~/.agents volume and the
-# project's own ~/.local and ~/.cache. This links the agents' state into ~/.agents, project tool state into ~/.local,
-# and the settings into this repo. devc clones the repo to ~/.dotfiles and runs this file (the dotfiles settings in
+# project's own ~/.local and ~/.cache. This links the agents' state into ~/.agents and the settings into this repo
+# (project tool state finds ~/.local by env, e.g. DAB_HOME in the Feature's containerEnv). devc clones the repo to ~/.dotfiles and runs this file (the dotfiles settings in
 # nix/home/devcontainer.nix). Every step checks the current state first, so it is safe to rerun, also on volumes
 # and directories an earlier container already filled.
 set -euo pipefail
@@ -14,8 +14,6 @@ export DOTFILES_DIR="$DOTFILES"
 # Shared by all my containers: agent sessions, so a rebuild or another project keeps them.
 AGENTS="$HOME/.agents"
 AGENT_HOMES=(claude codex ccs grok claude.json)
-# The project's own, in ~/.local (a directory per project on the docker host): kept across rebuilds.
-PROJECT_HOMES=(dab)
 
 say() { echo "[container] $*"; }
 is_empty_dir() { [ -d "$1" ] && [ ! -L "$1" ] && [ -z "$(ls -A "$1")" ]; }
@@ -77,11 +75,6 @@ skip() {
 if [ ! -f /opt/personal/versions ]; then
 	skip "this image has no personal Feature (/opt/personal): rebuild the container with \`devc rebuild\`"
 fi
-# Only a container devc made has the project's own ~/.local; an older one keeps these where they are.
-mkdir -p "$HOME/.local"
-for name in "${PROJECT_HOMES[@]}"; do
-	link_home "$name" "$HOME/.local"
-done
 # The npm CLIs are pinned here too (nix/packages). If the container's are older, the codex step would try to
 # npm-install the new release over them.
 tools=$(sed -n 's/^tools=//p' /opt/personal/versions)

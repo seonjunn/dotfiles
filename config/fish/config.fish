@@ -17,6 +17,10 @@ set -l _os (uname)
 fish_add_path -g $HOME/.dotfiles/bin
 fish_add_path -g $HOME/.local/bin
 fish_add_path -g $HOME/bin
+# dab declares its home by env in dev containers (DAB_HOME on a persistent volume); its bin goes first
+if set -q DAB_HOME
+	fish_add_path -g $DAB_HOME/data/versions/current/bin
+end
 if test -d $HOME/.cargo
 	fish_add_path -g $HOME/.cargo/bin
 end

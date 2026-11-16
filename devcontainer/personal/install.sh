@@ -213,8 +213,8 @@ else
 fi
 
 # Container start (the entrypoint, root, every start): the project's state, and its Orca server (orcad) when the
-# project has one installed in ~/.local/opt/orcad. orcad keeps its data, lock, log and port in the project's
-# ~/.local/state, so two containers never share them.
+# project has one installed in ~/.local/opt/orcad. orcad keeps its data, lock and log in the project's
+# ~/.local/state (orca-hub's defaults), so two containers never share them.
 orca=$HOME_EXPECTED/.local/state/orca
 if [ -n "$NIXPROFILE" ]; then
 	# ~/.ssh/config: the host's, from its current Home Manager generation (read-only, mounted by devc), unless the
@@ -230,25 +230,29 @@ umask 022
 $PREFIX/state
 $sshconfig
 hub=$HOME_EXPECTED/.local/opt/orcad/orca-hub
+status=/run/personal-orcad
 if [ -x "\$hub" ]; then
 	# nothing runs yet in a container that is starting: a lock in the project's state is from an orcad that is gone
 	rm -f "$orca/orcad.lock"
-	# The port is chosen once and kept: the first free one from the option orcadPortBase. Containers on the host's
-	# network share its ports, so the second one gets the next port; on their own network it is always the base.
-	if [ ! -s "$orca/port" ]; then
-		p=${ORCADPORTBASE:-6789}
-		while ! python3 -c 'import socket, sys; socket.socket().bind(("127.0.0.1", int(sys.argv[1])))' "\$p" 2>/dev/null; do
-			p=\$((p + 1))
-		done
-		runuser -u $USER_NAME -- sh -c "echo \$p >'$orca/port'"
+	# The port is the project's declared one (leblanc's tunnel points at it), never another: without one, or when
+	# it is taken, orcad stays down and says why (docker logs and \$status, which devc up prints).
+	port=\$(cat $PREFIX/orcad-port 2>/dev/null)
+	if [ -z "\$port" ]; then
+		echo "orcad not started: no port declared for this project (infra data/orca.toml)" | tee \$status >&2
+	elif ! python3 -c 'import socket, sys; socket.socket().bind(("127.0.0.1", int(sys.argv[1])))' "\$port" 2>/dev/null; then
+		echo "orcad not started: port \$port is taken (another container on the host's network?)" | tee \$status >&2
+	else
+		echo "orcad starting on 127.0.0.1:\$port" >\$status
+		# as the user, the log too: files in ~/.local belong to the docker host's user
+		runuser -u $USER_NAME -- env HOME=$HOME_EXPECTED sh -c '"\$0" start >>"$orca/start.log" 2>&1' "\$hub" &
 	fi
-	# as the user, the log too: files in ~/.local belong to the docker host's user
-	runuser -u $USER_NAME -- env ORCA_USER_DATA="$orca" ORCA_PORT="\$(cat "$orca/port")" \
-		ORCA_LOG_DIR="$HOME_EXPECTED/.local/state/orca-hub" sh -c '"\$0" start >>"\$ORCA_USER_DATA/start.log" 2>&1' "\$hub" &
 fi
 exec "\$@"
 EOF
 chmod 0755 "$PREFIX/start"
+# What orca-hub reads by default (infra hosts/florence/dike-orca/orca-hub), also when run by hand.
+echo "${ORCADPORT:-}" >"$PREFIX/orcad-port"
+echo "${WORKSPACEFOLDER:-}" >"$PREFIX/workspace"
 
 # GitHub's host keys, from its API over HTTPS, so the first git over ssh in a fresh container needs no prompt.
 if ! grep -qs '^github.com ' /etc/ssh/ssh_known_hosts; then

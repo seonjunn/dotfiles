@@ -7,7 +7,7 @@ function fish_prompt
 	set_color brwhite
 	echo -n "."
 	set_color green
-	echo -n (string replace -- '.local' '' (hostname))
+	echo -n (prompt_hostname) # fish's: the hostname up to its first dot (a dev container overrides it, config.fish)
 	if [ $PWD != $HOME ]
 		set_color brblack
 		echo -n ':'

@@ -1,7 +1,8 @@
-# My dev containers, for bin/devc (~/.config/devc/config.json): the Features (devcontainer/*, by exact version),
-# the releases this machine's Home Manager installs (used where the docker host has no Nix to lend its profile),
-# and this repo as the dotfiles that bootstrap/container.sh applies at create time.
-{ config, pkgs, ... }:
+# My dev containers, for bin/devc (~/.config/devc/config.json): the Feature (devcontainer/personal, by exact
+# version), the releases this machine's Home Manager installs (used where the docker host has no Nix to lend its
+# profile), each project's Orca server port (set by the machine's own config), and this repo as the dotfiles that
+# bootstrap/container.sh applies at create time.
+{ config, lib, pkgs, ... }:
 let
   readJSON = f: builtins.fromJSON (builtins.readFile f);
   feature = name: "ghcr.io/seonjunn/dotfiles/${name}:${(readJSON ../../devcontainer/${name}/devcontainer-feature.json).version}";
@@ -9,7 +10,13 @@ let
   npmPin = name: pkg: (readJSON ../packages/${name}/package.json).dependencies.${pkg};
 in
 {
-  xdg.configFile."devc/config.json".text = builtins.toJSON {
+  options.dotfiles.devcontainer.orcaPorts = lib.mkOption {
+    type = lib.types.attrsOf lib.types.port;
+    default = { };
+    description = "Project folder on this docker host -> its Orca server's port. A project not listed gets no orcad.";
+  };
+
+  config.xdg.configFile."devc/config.json".text = builtins.toJSON {
     personal = feature "personal";
     releases = {
       fish = config.programs.fish.package.version;
@@ -24,6 +31,7 @@ in
       codex = npmPin "codex" "@openai/codex";
       ccs = npmPin "ccs" "@kaitranntt/ccs";
     };
+    inherit (config.dotfiles.devcontainer) orcaPorts;
     dotfiles = {
       repository = "https://github.com/seonjunn/dotfiles";
       targetPath = "~/.dotfiles";

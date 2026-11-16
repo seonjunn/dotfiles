@@ -2,7 +2,8 @@
 # The devcontainer CLI for the project around the current directory (its git root), with my Feature, mounts and
 # dotfiles added (~/.config/devc/config.json, written by Home Manager from nix/home/devcontainer.nix).
 #   devc up [ARGS]       create or start the container (ARGS go to `devcontainer up`)
-#   devc rebuild [ARGS]  the same, replacing the container (~/.agents and the project's ~/.local, ~/.cache stay)
+#   devc rebuild [--force] [ARGS]  the same, replacing the container (~/.agents and the project's ~/.local, ~/.cache
+#                        stay). First lists what exists only in the old container's own layer and asks (--force: don't)
 #   devc ssh [ARGS]      ssh into it from this machine, forwarding the ssh agent (`devcontainer exec` does not);
 #                        ARGS go to ssh after the destination (options or a command)
 #   devc stdio FOLDER    one ssh connection to FOLDER's container over stdin/stdout: the ProxyCommand that
@@ -57,11 +58,15 @@ ro_volume() { # name, host dir: a volume that is a read-only bind of the dir (ma
 
 up() {
 	[ -f "$CONFIG" ] || die "no $CONFIG (Home Manager writes it: dotfiles nix/home/devcontainer.nix)"
-	local f d features profile
+	local f d features profile conf opts
 	f=$(folder)
 	d=$(project "$f")
 	mkdir -p "$d/local" "$d/cache"
 	[ -e "$d/.folder" ] || echo "$f" >"$d/.folder"
+	conf=$(devcontainer read-configuration --workspace-folder "$f" 2>/dev/null) || die "devcontainer read-configuration failed in $f"
+	# Per project: its Orca port (declared in infra data/orca.toml; none = no orcad) and its folder in the container.
+	opts=$(jq -c --arg f "$f" --arg ws "$(jq -r '.workspace.workspaceFolder // ""' <<<"$conf")" \
+		'{orcadPort: ((.orcaPorts // {})[$f] // "" | tostring), workspaceFolder: $ws}' "$CONFIG")
 	# Every mount is devc's (a Feature may not declare an external volume). Volumes are `external`: in a compose
 	# project a plain one becomes a new <project>_<name> volume that hides the real one (tested).
 	local h=/home/vscode
@@ -74,7 +79,7 @@ up() {
 	docker volume create "$USER-agents" >/dev/null # creating one that exists changes nothing
 	docker volume create "$USER-config" >/dev/null
 	if profile=$(nix_profile); then
-		features=$(jq -c --arg p "$profile" '{(.personal): {nixProfile: $p}}' "$CONFIG")
+		features=$(jq -c --arg p "$profile" --argjson o "$opts" '{(.personal): ({nixProfile: $p} + $o)}' "$CONFIG")
 		# The host's /nix and Nix profiles, read-only: volumes that are read-only binds, because --mount has no
 		# read-only flag and the container's root must never write the host's /nix. The Feature's start script links
 		# ~/.ssh/config into the profile.
@@ -83,7 +88,7 @@ up() {
 		want+=("type=volume,source=$USER-host-nix,target=/nix,external=true"
 			"type=volume,source=$USER-host-nix-profiles,target=$HOME/.local/state/nix/profiles,external=true")
 	else
-		features=$(jq -c '{(.personal): .releases}' "$CONFIG")
+		features=$(jq -c --argjson o "$opts" '{(.personal): (.releases + $o)}' "$CONFIG")
 		# --mount has no read-only flag, so the container's root could write the host's file (on malphite a
 		# root-owned Nix store file, reached through OrbStack's file sharing; accepted, D43).
 		want+=("type=bind,source=$HOME/.ssh/config,target=$h/.ssh/config")
@@ -92,8 +97,8 @@ up() {
 	# devcontainer.json mounts, and docker refuses two mounts at one place. (A compose file's volumes are not in
 	# this list; compose itself lets the later mount at the same place win.)
 	local taken mounts=() m dst
-	taken=$(devcontainer read-configuration --workspace-folder "$f" 2>/dev/null | jq -r '.configuration.mounts[]? |
-		if type == "string" then (capture("(target|dst|destination)=(?<t>[^,]+)").t) else .target end')
+	taken=$(jq -r '.configuration.mounts[]? |
+		if type == "string" then (capture("(target|dst|destination)=(?<t>[^,]+)").t) else .target end' <<<"$conf")
 	for m in "${want[@]}"; do
 		dst=${m#*target=}
 		dst=${dst%%,*}
@@ -104,17 +109,56 @@ up() {
 		fi
 	done
 	# --no-lockfile: the CLI would otherwise write .devcontainer/devcontainer-lock.json into the (team's) project
-	exec devcontainer up --workspace-folder "$f" --no-lockfile --additional-features "$features" "${mounts[@]}" \
+	devcontainer up --workspace-folder "$f" --no-lockfile --additional-features "$features" "${mounts[@]}" \
 		--dotfiles-repository "$(jq -r .dotfiles.repository "$CONFIG")" \
 		--dotfiles-target-path "$(jq -r .dotfiles.targetPath "$CONFIG")" \
 		--dotfiles-install-command "$(jq -r .dotfiles.installCommand "$CONFIG")" "$@"
+	# what the Feature's start script did about orcad (only when the project has one installed)
+	docker exec "$(container "$f")" cat /run/personal-orcad 2>/dev/null | sed 's/^/devc: /' >&2 || true
+}
+
+guard() { # before `rebuild` removes FOLDER's container: what lives only in its own layer (no volume or bind) is lost
+	local id lost mounts
+	id=$(docker ps -aq --filter "label=devcontainer.local_folder=$1" | head -1)
+	[ -n "$id" ] || return 0
+	# docker diff lists exactly the container layer's changes; what is under a mount never appears in it, only the
+	# mount points themselves when the container had to create them (dropped here).
+	mounts=$(docker inspect -f '{{range .Mounts}}{{.Destination}}{{"\n"}}{{end}}' "$id")
+	lost=$(docker diff "$id" | awk '{print $2}' |
+		grep -oE '^/(home/vscode|root|workspaces|opt|srv|mnt|data[^/]*|usr/local)/[^/]+' | sort -u |
+		grep -vxF -f <(printf '%s\n' "$mounts" | grep .) || true)
+	[ -n "$lost" ] || return 0
+	echo "devc: rebuilding removes container $id; these exist only in it (not on a volume or bind mount):" >&2
+	if [ "$(docker inspect -f '{{.State.Running}}' "$id")" = true ]; then
+		# shellcheck disable=SC2086
+		docker exec "$id" sh -c 'for p; do printf "  %-8s %s\n" "$(du -sh "$p" 2>/dev/null | cut -f1)" "$(stat -c %N "$p")"; done' sh $lost >&2
+	else
+		sed 's/^/  /' <<<"$lost" >&2
+	fi
+	if [ "$2" = 1 ]; then
+		echo "devc: --force: going ahead" >&2
+		return 0
+	fi
+	[ -t 0 ] || die "not rebuilding without a terminal to confirm; rerun with --force once the list above is safe to lose"
+	local answer
+	read -r -p "Lose these and rebuild? [y/N] " answer
+	case "$answer" in y | Y | ㅛ) ;; *) die "not rebuilt" ;; esac
+}
+
+rebuild() {
+	local force=0 args=() a
+	for a; do
+		if [ "$a" = --force ]; then force=1; else args+=("$a"); fi
+	done
+	guard "$(folder)" "$force"
+	up --remove-existing-container "${args[@]}"
 }
 
 cmd=${1:-}
 [ $# -gt 0 ] && shift
 case "$cmd" in
 	up) up "$@" ;;
-	rebuild) up --remove-existing-container "$@" ;;
+	rebuild) rebuild "$@" ;;
 	ssh)
 		# The host key is the project's (its ~/.local), so the alias names host and project.
 		f=$(folder)
@@ -123,5 +167,5 @@ case "$cmd" in
 	stdio)
 		[ $# -eq 1 ] || die "usage: devc stdio FOLDER"
 		exec docker exec -i -u root "$(container "$1")" /opt/personal/bin/sshd-stdio ;;
-	*) sed -n '2,14s/^# \{0,1\}//p' "$0" >&2; exit 2 ;;
+	*) sed -n '2,15s/^# \{0,1\}//p' "$0" >&2; exit 2 ;;
 esac

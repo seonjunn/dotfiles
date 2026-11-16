@@ -45,6 +45,18 @@ end
 if test -S $HOME/.ssh/agent.sock
 	set -gx SSH_AUTH_SOCK $HOME/.ssh/agent.sock
 end
+# In a dev container (dotfiles Feature personal): an ssh login starts in the project's folder, not in ~, and the
+# prompt and window title name it <project>-container (its real hostname is a container id, or the docker host's
+# on the host's network; a real one would need the team's devcontainer.json or compose file).
+if test -s /opt/personal/workspace
+	read -g __devc_workspace </opt/personal/workspace
+	function prompt_hostname
+		echo (path basename $__devc_workspace)-container
+	end
+	if status is-login; and set -q SSH_CONNECTION; and test "$PWD" = "$HOME"; and test -d "$__devc_workspace"
+		cd $__devc_workspace
+	end
+end
 set -gx EDITOR vim
 set -gx TERM xterm-256color
 set -gx LANG en_US.UTF-8

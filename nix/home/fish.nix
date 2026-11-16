@@ -53,6 +53,12 @@ in
     interactiveShellInit = ''
       set fish_greeting
       fish_vi_key_bindings
+
+      # dab (shared Android device farm), where installed: completion, a (dab:<device>) prompt prefix inside
+      # `dab use`, and an adb function that points at `dab devices` outside an allocation, then runs adb as is
+      if command -q dab
+        dab init fish | source
+      end
     '';
 
     shellInitLast = ''

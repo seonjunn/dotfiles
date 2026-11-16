@@ -113,3 +113,9 @@ if command -q zoxide
 	zoxide init fish | source
 end
 
+
+# dab (shared Android device farm), where installed: completion, a (dab:<device>) prompt prefix inside
+# `dab use`, and an adb function that points at `dab devices` outside an allocation, then runs adb as is
+if status is-interactive; and command -q dab
+	dab init fish | source
+end

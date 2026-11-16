@@ -7,7 +7,7 @@ names = ["bat", "eza", "fd", "gh", "gum", "jq", "ripgrep", "yq-go", "nixfmt", "u
 [dev]  # build tools
 names = ["cmake", "devcontainer"]  # devcontainer: `devcontainer build/up` CLI; needs the machine's docker
 
-[android]  # devices over adb (android.nix, opt-in); SDK/NDK for builds are not here
+[android]  # devices over adb (android.nix, from nixpkgs-unstable); SDK/NDK for builds are not here
 names = ["android-tools"]  # adb, fastboot
 
 [editor]

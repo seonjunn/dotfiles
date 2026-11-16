@@ -23,7 +23,7 @@
       # opt-in: VS Code on a GUI machine: settings.json keys and local extensions follow dotfiles.vscode.{ui,remote}
       vscode = ./nix/home/vscode.nix;
       # opt-in: Android device tools (adb, fastboot, adb-shell); not part of base
-      android = import ./nix/home/android.nix { inherit adb-shell; };
+      android = import ./nix/home/android.nix { inherit adb-shell nixpkgs-unstable; };
     };
   };
 }

@@ -16,10 +16,25 @@
     includes = [ "config.d/*.conf" ];
     settings."*" = {
       AddKeysToAgent = "yes"; # a key used once stays in the agent
+      # One agent path for every ssh, whatever $SSH_AUTH_SOCK the calling shell has: a ControlMaster opened from
+      # a shell without it would otherwise forward no agent to every connection muxed through it. Hosts that
+      # forward the agent use `ForwardAgent ~/.ssh/agent.sock`. The machine decides what the path points to:
+      # its own agent where the keys are, the newest forwarded one on a server (server.nix).
+      IdentityAgent = "~/.ssh/agent.sock";
       ServerAliveInterval = 30;
       ControlMaster = "auto"; # reuse one connection per host
       ControlPath = "~/.ssh/cm/%C";
       ControlPersist = "10m";
     };
   };
+
+  # ssh does not create the ControlPath directory; without it every connection fails ("cannot bind")
+  home.activation.sshControlDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run mkdir -p -m 700 "$HOME/.ssh/cm"
+  '';
+
+  # agent clients other than ssh (ssh-add, tools in an old tmux pane) find the same agent
+  programs.fish.shellInit = ''
+    set -gx SSH_AUTH_SOCK $HOME/.ssh/agent.sock
+  '';
 }

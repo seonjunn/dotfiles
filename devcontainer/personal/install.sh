@@ -187,6 +187,26 @@ cat >"$PREFIX/as-user" <<EOF
 if [ "\$(id -u)" = 0 ]; then exec runuser -u $USER_NAME -- env HOME=$HOME_EXPECTED "\$@"; fi
 exec "\$@"
 EOF
+# link-state LINK TARGET: LINK becomes a link to TARGET (in the project's ~/.local). What a container already has at
+# LINK is moved in, or set aside next to TARGET when TARGET holds data too; nothing is overwritten.
+cat >"$PREFIX/link-state" <<'EOF'
+#!/bin/sh
+l=$1 t=$2
+[ -L "$l" ] && [ "$(readlink "$l")" = "$t" ] && exit 0
+mkdir -p "$(dirname "$t")"
+if [ -L "$l" ]; then
+	rm "$l"
+elif [ -e "$l" ]; then
+	if [ ! -e "$t" ] || rmdir "$t" 2>/dev/null; then
+		mv "$l" "$t"
+	else
+		mv "$l" "$t.pre-link.$(date +%Y%m%d%H%M%S)"
+		echo "link-state: $l and $t both held data; kept $l as $t.pre-link.*" >&2
+	fi
+fi
+mkdir -p "$t"
+ln -s "$t" "$l"
+EOF
 cat >"$PREFIX/state" <<EOF
 #!/bin/sh
 # make this project's state dirs and sshd host key, as the user
@@ -206,7 +226,7 @@ chmod 0755 /run/sshd
 $PREFIX/state
 exec /usr/sbin/sshd -i -f $PREFIX/sshd_config -o "SetEnv=PATH=\$PATH DAB_HOME=\$DAB_HOME"
 EOF
-chmod 0755 "$PREFIX/as-user" "$PREFIX/state" "$PREFIX/bin/sshd-stdio"
+chmod 0755 "$PREFIX/as-user" "$PREFIX/link-state" "$PREFIX/state" "$PREFIX/bin/sshd-stdio"
 # Each ssh login points ~/.ssh/agent.sock at the agent it forwarded, as the servers do (dotfiles server.nix): shells
 # and tmux panes use that fixed path (config/fish/config.fish), so they keep working after the session that
 # started them ends. sshd runs this file for every session, whatever the user's shell.
@@ -237,6 +257,11 @@ cat >"$PREFIX/start" <<EOF
 umask 022
 $PREFIX/state
 $sshconfig
+# orcad also writes outside ORCA_USER_DATA, to fixed places in the home directory: ~/.orca (its secret store, which
+# seals integration credentials, and agent hooks) and ~/orca/workspaces (worktrees it makes for Orca workspaces).
+# Both belong to the project, so they live in its ~/.local; a rebuild would otherwise mint a new secret store.
+$PREFIX/as-user $PREFIX/link-state $HOME_EXPECTED/.orca $HOME_EXPECTED/.local/state/orca-home
+$PREFIX/as-user $PREFIX/link-state $HOME_EXPECTED/orca $HOME_EXPECTED/.local/orca
 hub=$HOME_EXPECTED/.local/opt/orcad/orca-hub
 status=$orca/status # what this start did about orcad; devc up prints it
 rm -f "\$status"

@@ -1,0 +1,25 @@
+# Publishes the dev container Features devcontainer/<id> to ghcr.io/seonjunn/dotfiles/<id>:<version>.
+# A version that is already published is skipped, so a change ships only with a new "version" in its
+# devcontainer-feature.json (tests/test_devcontainer_feature.sh checks this before each commit).
+name: devcontainer feature
+on:
+  push:
+    branches: [master]
+    paths: [devcontainer/**]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: devcontainers/action@v1
+        with:
+          publish-features: "true"
+          base-path-to-features: ./devcontainer
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

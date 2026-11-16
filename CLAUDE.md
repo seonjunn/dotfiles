@@ -41,7 +41,8 @@ Fish has two sources. Home Manager machines get `nix/home/fish.nix` with aliases
 | `nix/home/` | Home Manager modules |
 | `nix/data/` | Defaults read by the modules (packages, shell aliases and abbreviations, git) |
 | `nix/packages/` | Pinned tools: `ccs`, `codex`, `arxiv` (each has a README on how to bump it) |
-| `bootstrap/` | Modular setup engine (`bootstrap/setup.sh`, `bootstrap/lib`, `bootstrap/ops`) |
+| `bootstrap/` | Modular setup engine (`bootstrap/setup.sh`, `bootstrap/lib`, `bootstrap/ops`); `bootstrap/container.sh` is the dev container settings step |
+| `devcontainer/` | Dev container Features, published by `.github/workflows/` to `ghcr.io/seonjunn/dotfiles/<id>`; a change needs a new `version`. `personal`: tools (the docker host's Nix profile, or the releases Home Manager pins), fish login shell, sshd without a port, orcad at start. `host-nix`: the host's `/nix` read-only. Attached only by `bin/devc` (config from `nix/home/devcontainer.nix`), which also mounts the per-project `~/.local` and `~/.cache` |
 | `setup.sh` | Single bootstrap entrypoint; clones repo if needed and delegates to `bootstrap/setup.sh` |
 | `tests/` | Repo checks (`tests/run.sh`) |
 

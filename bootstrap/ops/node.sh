@@ -26,7 +26,8 @@ run_node() {
 }
 
 verify_node() {
-  hm_active || [ -f "$SETUP_HOME/.nvm/nvm.sh" ]
+  # any node will do (a dev container's comes with the image, devcontainer/personal)
+  hm_active || command -v node &>/dev/null || [ -f "$SETUP_HOME/.nvm/nvm.sh" ]
 }
 
 declare -A OP_NODE=(

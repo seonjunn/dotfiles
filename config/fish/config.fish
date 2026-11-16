@@ -35,6 +35,12 @@ if test $_os = Darwin
 		fish_add_path -g /opt/homebrew/bin
 	end
 end
+# ssh agent: the fixed path an ssh login points at the agent it forwarded (dev containers: the Feature's
+# /etc/ssh/sshrc), so tmux panes outlive the session that started them. Only while it leads to a live agent:
+# a VS Code terminal keeps the agent VS Code gave it.
+if test -S $HOME/.ssh/agent.sock
+	set -gx SSH_AUTH_SOCK $HOME/.ssh/agent.sock
+end
 set -gx EDITOR vim
 set -gx TERM xterm-256color
 set -gx LANG en_US.UTF-8

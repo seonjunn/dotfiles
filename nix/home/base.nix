@@ -16,6 +16,7 @@
     ./systemd.nix
     ./scripts.nix
     ./uv.nix
+    ./devcontainer.nix
   ];
 
   programs.home-manager.enable = true;

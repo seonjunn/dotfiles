@@ -1,0 +1,30 @@
+{
+	"id": "personal",
+	"version": "1.0.0",
+	"name": "seonjunn's tools",
+	"description": "My shell and agent CLIs at the releases my machines run, fish as the login shell, an sshd without a port, and my Orca server when the project has one. Attached by dotfiles bin/devc, which also mounts the per-project ~/.local and ~/.cache; settings come from bootstrap/container.sh.",
+	"documentationURL": "https://github.com/seonjunn/dotfiles/tree/master/devcontainer/personal",
+	"options": {
+		"nixProfile": { "type": "string", "default": "", "description": "The docker host's Nix profile, mounted by the Feature host-nix. When set, the tools come from it and the releases below are not installed" },
+		"fish": { "type": "string", "default": "", "description": "fish release" },
+		"tmux": { "type": "string", "default": "", "description": "tmux release (built from source)" },
+		"fzf": { "type": "string", "default": "", "description": "fzf release" },
+		"ripgrep": { "type": "string", "default": "", "description": "ripgrep release" },
+		"gum": { "type": "string", "default": "", "description": "gum release" },
+		"eza": { "type": "string", "default": "", "description": "eza release" },
+		"zoxide": { "type": "string", "default": "", "description": "zoxide release" },
+		"uv": { "type": "string", "default": "", "description": "uv release" },
+		"node": { "type": "string", "default": "", "description": "Node.js release" },
+		"codex": { "type": "string", "default": "", "description": "@openai/codex npm release" },
+		"ccs": { "type": "string", "default": "", "description": "@kaitranntt/ccs npm release" },
+		"orcadPortBase": { "type": "string", "default": "6789", "description": "first port tried for the project's Orca server" }
+	},
+	"containerEnv": {
+		"PATH": "${PATH}:/opt/personal/bin:/opt/personal/nix-profile/bin"
+	},
+	"entrypoint": "/opt/personal/start",
+	"mounts": [
+		{ "source": "${localEnv:USER}-agents", "target": "/home/vscode/.agents", "type": "volume", "external": true },
+		{ "source": "${localEnv:USER}-config", "target": "/home/vscode/.config", "type": "volume", "external": true }
+	]
+}

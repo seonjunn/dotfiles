@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+# The devcontainer CLI for the project around the current directory (its git root), with my Features, state and
+# dotfiles added (~/.config/devc/config.json, written by Home Manager from nix/home/devcontainer.nix).
+#   devc up [ARGS]       create or start the container (ARGS go to `devcontainer up`)
+#   devc rebuild [ARGS]  the same, replacing the container (~/.agents and the project's ~/.local, ~/.cache stay)
+#   devc ssh [ARGS]      ssh into it from this machine, forwarding the ssh agent (`devcontainer exec` does not);
+#                        ARGS go to ssh after the destination (options or a command)
+#   devc stdio FOLDER    one ssh connection to FOLDER's container over stdin/stdout: the ProxyCommand that
+#                        `devc ssh` and other machines' ssh aliases use (infra data/hosts.toml `container`)
+# Tools: on a Linux docker host with Nix, the host's Home Manager profile (read-only /nix, Feature host-nix);
+# elsewhere the Feature installs the same releases. The project's ~/.local and ~/.cache are directories on this
+# host, <root>/<project>/{local,cache}: root /data2/users/$USER/containers where that exists, else
+# ~/.local/share/devc (DEVC_ROOT overrides).
+set -euo pipefail
+
+CONFIG=${DEVC_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/devc/config.json}
+die() { echo "devc: $*" >&2; exit 1; }
+
+folder() { # the project: the git work tree around the current directory, else the directory itself
+	realpath "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+}
+
+root() {
+	if [ -n "${DEVC_ROOT:-}" ]; then echo "$DEVC_ROOT"
+	elif [ -d "/data2/users/$USER" ]; then echo "/data2/users/$USER/containers"
+	else echo "$HOME/.local/share/devc"; fi
+}
+
+project() { # the project's state directory on this host: <root>/<git root's name>, or <name>-<hash> when another
+	# folder of the same name took it first (each records its folder in .folder)
+	local f=$1 d
+	d="$(root)/$(basename "$f")"
+	if [ -e "$d/.folder" ] && [ "$(cat "$d/.folder")" != "$f" ]; then
+		d="$d-$(printf %s "$f" | git hash-object --stdin | cut -c1-8)"
+	fi
+	echo "$d"
+}
+
+container() { # the running container created for folder $1
+	local id
+	id=$(docker ps -q --filter "label=devcontainer.local_folder=$1" | head -1)
+	[ -n "$id" ] || die "no running container for $1 (devc up there)"
+	echo "$id"
+}
+
+nix_profile() { # this host's profile, when a container can run it: Linux, and the link lives where host-nix mounts
+	local p
+	[ "$(uname -s)" = Linux ] && [ -d /nix/store ] || return 1
+	p=$(readlink "$HOME/.nix-profile" 2>/dev/null) || return 1
+	case "$p" in "$HOME/.local/state/nix/profiles/"*) echo "$p" ;; *) return 1 ;; esac
+}
+
+ro_volume() { # name, host dir: a volume that is a read-only bind of the dir (made once)
+	docker volume inspect "$1" >/dev/null 2>&1 ||
+		docker volume create --driver local --opt type=none --opt "device=$2" --opt o=bind,ro "$1" >/dev/null
+}
+
+up() {
+	[ -f "$CONFIG" ] || die "no $CONFIG (Home Manager writes it: dotfiles nix/home/devcontainer.nix)"
+	local f d features profile
+	f=$(folder)
+	d=$(project "$f")
+	mkdir -p "$d/local" "$d/cache"
+	[ -e "$d/.folder" ] || echo "$f" >"$d/.folder"
+	local binds=(local cache)
+	if profile=$(nix_profile); then
+		features=$(jq -c --arg p "$profile" '{(.personal): {nixProfile: $p}, (.hostNix): {}}' "$CONFIG")
+		# What the Feature host-nix mounts: read-only binds made as volumes, because a compose project drops the
+		# readonly flag of a bind (tested) and the container's root must never write the host's /nix. The Feature's
+		# start script links ~/.ssh/config into that profile.
+		ro_volume "$USER-host-nix" /nix
+		ro_volume "$USER-host-nix-profiles" "$HOME/.local/state/nix/profiles"
+	else
+		features=$(jq -c '{(.personal): .releases}' "$CONFIG")
+		# --mount has no read-only flag, so the container's root could write the host's file (on malphite a
+		# root-owned Nix store file, reached through OrbStack's file sharing).
+		binds+=(ssh)
+	fi
+	# The Feature mounts these as external volumes (a compose project would otherwise make its own copies);
+	# creating one that exists changes nothing.
+	docker volume create "$USER-agents" >/dev/null
+	docker volume create "$USER-config" >/dev/null
+	# A project that mounts one of these itself keeps its own: the CLI does not merge --mount with the project's
+	# mounts, and docker refuses two mounts at one place.
+	local taken mounts=() t src dst
+	taken=$(devcontainer read-configuration --workspace-folder "$f" 2>/dev/null | jq -r '.configuration.mounts[]? |
+		if type == "string" then (capture("(target|dst|destination)=(?<t>[^,]+)").t) else .target end')
+	for t in "${binds[@]}"; do
+		case $t in
+			ssh) src=$HOME/.ssh/config dst=/home/vscode/.ssh/config ;;
+			*) src=$d/$t dst=/home/vscode/.$t ;;
+		esac
+		if grep -qxF "$dst" <<<"$taken"; then
+			echo "devc: the project mounts $dst itself; $src is not used" >&2
+		else
+			mounts+=(--mount "type=bind,source=$src,target=$dst")
+		fi
+	done
+	# --no-lockfile: the CLI would otherwise write .devcontainer/devcontainer-lock.json into the (team's) project
+	exec devcontainer up --workspace-folder "$f" --no-lockfile --additional-features "$features" "${mounts[@]}" \
+		--dotfiles-repository "$(jq -r .dotfiles.repository "$CONFIG")" \
+		--dotfiles-target-path "$(jq -r .dotfiles.targetPath "$CONFIG")" \
+		--dotfiles-install-command "$(jq -r .dotfiles.installCommand "$CONFIG")" "$@"
+}
+
+cmd=${1:-}
+[ $# -gt 0 ] && shift
+case "$cmd" in
+	up) up "$@" ;;
+	rebuild) up --remove-existing-container "$@" ;;
+	ssh)
+		# The host key is the project's (its ~/.local), so the alias names host and project.
+		f=$(folder)
+		exec ssh -o ProxyCommand="$(realpath "$0") stdio $(printf %q "$f")" \
+			-o HostKeyAlias="devc-$(hostname -s)-$(basename "$(project "$f")")" -o ForwardAgent=yes vscode@devc "$@" ;;
+	stdio)
+		[ $# -eq 1 ] || die "usage: devc stdio FOLDER"
+		exec docker exec -i -u root "$(container "$1")" /opt/personal/bin/sshd-stdio ;;
+	*) sed -n '2,14s/^# \{0,1\}//p' "$0" >&2; exit 2 ;;
+esac

@@ -1,22 +1,26 @@
 #!/usr/bin/env bash
-# Personal setup inside a dev container without Nix. The project's image brings the system and its
-# tools; this brings the settings and the pinned agent CLIs. A project's git-ignored post-create hook
-# clones this repo to ~/.dotfiles and runs this file. Every step checks the current state first, so it
-# is safe to rerun, also on volumes an earlier container already filled.
+# Personal settings inside a dev container, at create time. The Feature devcontainer/personal put my tools in the
+# image (or the docker host's Nix profile first in PATH); bin/devc mounted the shared ~/.agents volume and the
+# project's own ~/.local and ~/.cache. This links the agents' state into ~/.agents, project tool state into ~/.local,
+# and the settings into this repo. devc clones the repo to ~/.dotfiles and runs this file (the dotfiles settings in
+# nix/home/devcontainer.nix). Every step checks the current state first, so it is safe to rerun, also on volumes
+# and directories an earlier container already filled.
 set -euo pipefail
 
 DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export DOTFILES_DIR="$DOTFILES"
-# A volume shared by the user's containers. Agent state lives there, so a rebuild keeps the sessions.
+# Shared by all my containers: agent sessions, so a rebuild or another project keeps them.
 AGENTS="$HOME/.agents"
 AGENT_HOMES=(claude codex ccs grok claude.json)
+# The project's own, in ~/.local (a directory per project on the docker host): kept across rebuilds.
+PROJECT_HOMES=(dab)
 
 say() { echo "[container] $*"; }
 is_empty_dir() { [ -d "$1" ] && [ ! -L "$1" ] && [ -z "$(ls -A "$1")" ]; }
 
-# ~/.<name> becomes a link to ~/.agents/<name>. Data already at ~/.<name> is moved, never deleted.
-link_agent_home() {
-	local link="$HOME/.$1" target="$AGENTS/$1"
+# ~/.<name> becomes a link to <dir>/<name>. Data already at ~/.<name> is moved, never deleted.
+link_home() {
+	local link="$HOME/.$1" target="$2/$1"
 	[ -L "$link" ] && [ "$(readlink "$link")" = "$target" ] && return 0
 	if [ -L "$link" ]; then
 		rm "$link"
@@ -49,21 +53,44 @@ link_agent_home() {
 
 if [ -d "$AGENTS" ]; then
 	for name in "${AGENT_HOMES[@]}"; do
-		link_agent_home "$name"
+		link_home "$name" "$AGENTS"
 	done
 else
 	say "no ~/.agents volume: agent state stays in this container and a rebuild loses it" >&2
 fi
+mkdir -p "$HOME/.local"
+for name in "${PROJECT_HOMES[@]}"; do
+	link_home "$name" "$HOME/.local"
+done
 
 [ "$(git -C "$DOTFILES" remote get-url origin)" = https://github.com/seonjunn/dotfiles ] &&
 	git -C "$DOTFILES" remote set-url origin git@github.com:seonjunn/dotfiles.git
 
-# fish, tmux, fzf, ripgrep and gum: the settings need them and project images do not ship them.
-if sudo -n true 2>/dev/null; then
-	sudo bash "$DOTFILES/setup.sh" packages </dev/null
-else
-	say "no passwordless sudo: skipping fish, tmux, fzf, ripgrep, gum" >&2
+# Tools come from the Feature only. Without it the setup.sh steps below would install a second copy.
+if [ ! -f /opt/personal/versions ]; then
+	say "this image has no personal Feature (/opt/personal): create the container with \`devc up\`" >&2
+	exit 1
 fi
-# The steps infra-update reruns in containers (codex ccs claude), plus the settings links. node and uv
-# come in as their dependencies.
-bash "$DOTFILES/setup.sh" git dotfiles ipython claude codex ccs </dev/null
+# The npm CLIs are pinned here too (nix/packages). If the container's are older, the codex step would try to
+# npm-install the new release over them.
+tools=$(sed -n 's/^tools=//p' /opt/personal/versions)
+stale=""
+for pin in codex:@openai/codex ccs:@kaitranntt/ccs; do
+	name=${pin%%:*}
+	want=$(node -p "require('$DOTFILES/nix/packages/$name/package.json').dependencies['${pin#*:}']")
+	if [ "$tools" = image ]; then
+		have=$(sed -n "s/^$name=//p" /opt/personal/versions)
+	else # the store path's name carries the version: /nix/store/<hash>-codex-0.167.0/bin/codex
+		have=$(readlink -f "$(command -v "$name")" | sed -n "s|^/nix/store/[^-]*-$name-\([^/]*\)/.*|\1|p")
+	fi
+	[ "$want" = "$have" ] || stale="$stale $name ${have:-?} -> $want"
+done
+if [ -n "$stale" ]; then
+	if [ "$tools" = image ]; then
+		say "the image is older than dotfiles:$stale. Rebuild the container (devc rebuild); ~/.agents and ~/.local stay" >&2
+	else
+		say "the docker host's Home Manager profile is older than dotfiles:$stale. Update the host (infra-update); the container follows it without a rebuild" >&2
+	fi
+	exit 1
+fi
+bash "$DOTFILES/setup.sh" git dotfiles ipython claude codex </dev/null

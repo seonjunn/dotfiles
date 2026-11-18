@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# Resume any Codex session from any ccsx profile.
+#
+# Codex's own picker (`codex resume`, `--last`) lists only threads created by the
+# current account, even when the profiles share one sessions directory. A session
+# id still resumes across accounts, so this lists every rollout in the shared
+# directory and hands the chosen id to `ccsx resume`.
+#
+# Usage: ccsx-resume [-n N] [-l] [profile]
+#   profile  ccsx profile to resume with (default: $CCS_CODEX_PROFILE)
+#   -n N     how many recent sessions to list (default 200)
+#   -l       print the list instead of picking
+#
+# Each profile's sessions/ must link to the shared directory; this script only reads.
+set -euo pipefail
+
+SESSIONS="${CODEX_SHARED_SESSIONS:-$HOME/.codex/sessions}"
+PROFILES="$HOME/.ccs/codex-profiles.yaml"
+limit=200
+list_only=0
+
+while getopts "n:lh" opt; do
+	case "$opt" in
+	n) limit="$OPTARG" ;;
+	l) list_only=1 ;;
+	*) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+	esac
+done
+shift $((OPTIND - 1))
+profile="${1:-${CCS_CODEX_PROFILE:-}}"
+
+# account_id -> profile name, for the "made by" column.
+declare -A owner=()
+if [ -r "$PROFILES" ] && command -v yq >/dev/null; then
+	while IFS=$'\t' read -r acct name; do
+		[ -n "$acct" ] && owner[$acct]=$name
+	done < <(yq -r '.profiles | to_entries[] | [.value.account_id, .key] | @tsv' "$PROFILES" 2>/dev/null || true)
+fi
+
+if [ "$(uname)" = Darwin ]; then stat_mtime=(stat -f '%m%t%N'); else stat_mtime=(stat --printf '%Y\t%n\n'); fi
+
+list_sessions() {
+	# Newest first by modification time (last activity), not by creation.
+	find -L "$SESSIONS" -type f -name 'rollout-*.jsonl' -exec "${stat_mtime[@]}" {} + 2>/dev/null |
+		sort -rn | head -n "$limit" |
+		while IFS=$'\t' read -r epoch f; do
+			# The first user prompt sits in the first few hundred lines; never read whole rollouts.
+			head -n 300 "$f" | jq -rs --argjson epoch "$epoch" '
+				($epoch | strflocaltime("%m-%d %H:%M")) as $mtime
+				|
+				(map(select(.type == "session_meta")) | first | .payload) as $m
+				| (map(select(.type == "response_item" and .payload.type == "message" and .payload.role == "user")
+					| .payload.content[]?.text // empty
+					| select(startswith("<") or startswith("# AGENTS.md") | not))
+					| first // "") as $msg
+				| select($m.id != null and $m.thread_source != "subagent")
+				| [$m.id, $mtime, ($m.creator_account_id // "-"), ($m.cwd // "-"),
+					($msg | gsub("[\\t\\n\\r]+"; " ") | .[:100])] | @tsv' 2>/dev/null || true
+		done |
+		while IFS=$'\t' read -r id mtime acct cwd msg; do
+			who="${owner[$acct]:-${acct:0:8}}"
+			printf '%s\t%s  %-11s %-28s %s\n' "$id" "$mtime" "$who" "${cwd/#$HOME/\~}" "$msg"
+		done
+}
+
+if [ "$list_only" = 1 ]; then
+	list_sessions | cut -f2-
+	exit 0
+fi
+
+[ -n "$profile" ] || { echo "ccsx-resume: name a profile or set CCS_CODEX_PROFILE (ccsx auth show)" >&2; exit 2; }
+command -v fzf >/dev/null || { echo "ccsx-resume: fzf not found; use -l and run: ccsx resume <id>" >&2; exit 2; }
+
+# fzf closes the pipe once a line is picked, so the lister dies of SIGPIPE and pipefail
+# fails the pipeline; judge by the selection instead of the exit status.
+line=$(list_sessions | fzf --delimiter='\t' --with-nth=2 --no-sort --prompt="resume as $profile> ") || true
+[ -n "$line" ] || exit 0
+id="${line%%$'\t'*}"
+
+# Select the profile the same way `ccsx auth use` does for an interactive shell.
+eval "$(ccsx auth use "$profile" --shell bash 2>/dev/null | grep '^export ')"
+[ -n "${CODEX_HOME:-}" ] || { echo "ccsx-resume: unknown profile: $profile" >&2; exit 2; }
+if [ "$(readlink -f "$CODEX_HOME/sessions")" != "$(readlink -f "$SESSIONS")" ]; then
+	echo "ccsx-resume: $CODEX_HOME/sessions is not the shared $SESSIONS; resume may not find $id" >&2
+fi
+exec ccsx resume "$id"

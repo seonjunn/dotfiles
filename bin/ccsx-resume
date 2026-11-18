@@ -47,27 +47,41 @@ fi
 
 if [ "$(uname)" = Darwin ]; then stat_mtime=(stat -f '%m%t%N'); else stat_mtime=(stat --printf '%Y\t%n\n'); fi
 
+# Thread titles Codex generated ("thread_name"). Each CODEX_HOME keeps its own index, so read
+# the shared home and every profile; the latest entry for an id wins.
+titles=$(cat "$HOME/.codex/session_index.jsonl" "$HOME"/.ccs/codex-instances/*/session_index.jsonl 2>/dev/null |
+	jq -cs 'map(select(.id and .thread_name)) | sort_by(.updated_at) | map({(.id): .thread_name}) | add // {}' 2>/dev/null ||
+	echo '{}')
+
+# Laid out like `codex resume`: newest first, age, then the title (or the first prompt when
+# Codex has not named the thread), with owner profile and cwd dimmed after it.
+dim=$'\e[2m' off=$'\e[0m'
+[ "$list_only" = 1 ] && dim='' off=''
+
 list_sessions() {
 	# Newest first by modification time (last activity), not by creation.
 	find -L "$SESSIONS" -type f -name 'rollout-*.jsonl' -exec "${stat_mtime[@]}" {} + 2>/dev/null |
 		sort -rn | head -n "$limit" |
 		while IFS=$'\t' read -r epoch f; do
 			# The first user prompt sits in the first few hundred lines; never read whole rollouts.
-			head -n 300 "$f" | jq -rs --argjson epoch "$epoch" '
-				($epoch | strflocaltime("%m-%d %H:%M")) as $mtime
-				|
-				(map(select(.type == "session_meta")) | first | .payload) as $m
+			head -n 300 "$f" | jq -rs --argjson epoch "$epoch" --argjson titles "$titles" '
+				(now - $epoch) as $d
+				| (if $d < 60 then "now"
+					elif $d < 3600 then "\($d / 60 | floor)m ago"
+					elif $d < 86400 then "\($d / 3600 | floor)h ago"
+					else "\($d / 86400 | floor)d ago" end) as $age
+				| (map(select(.type == "session_meta")) | first | .payload) as $m
 				| (map(select(.type == "response_item" and .payload.type == "message" and .payload.role == "user")
 					| .payload.content[]?.text // empty
 					| select(startswith("<") or startswith("# AGENTS.md") | not))
 					| first // "") as $msg
 				| select($m.id != null and $m.thread_source != "subagent")
-				| [$m.id, $mtime, ($m.creator_account_id // "-"), ($m.cwd // "-"),
-					($msg | gsub("[\\t\\n\\r]+"; " ") | .[:100])] | @tsv' 2>/dev/null || true
+				| [$m.id, $age, ($m.creator_account_id // "-"), ($m.cwd // "-"),
+					($titles[$m.id] // $msg | gsub("[\\t\\n\\r]+"; " ") | .[:80])] | @tsv' 2>/dev/null || true
 		done |
-		while IFS=$'\t' read -r id mtime acct cwd msg; do
+		while IFS=$'\t' read -r id age acct cwd title; do
 			who="${owner[$acct]:-${acct:0:8}}"
-			printf '%s\t%s  %-11s %-28s %s\n' "$id" "$mtime" "$who" "${cwd/#$HOME/\~}" "$msg"
+			printf '%s\t%-10s %s  %s%s · %s%s\n' "$id" "$age" "$title" "$dim" "$who" "${cwd/#$HOME/\~}" "$off"
 		done
 }
 
@@ -81,7 +95,10 @@ command -v fzf >/dev/null || { echo "ccsx-resume: fzf not found; use -l and run:
 
 # fzf closes the pipe once a line is picked, so the lister dies of SIGPIPE and pipefail
 # fails the pipeline; judge by the selection instead of the exit status.
-line=$(list_sessions | fzf --delimiter='\t' --with-nth=2 --no-sort --prompt="resume as $profile> ") || true
+line=$(list_sessions | fzf --ansi --delimiter='\t' --with-nth=2 --no-sort \
+	--layout=reverse --info=inline-right --pointer='›' --gutter=' ' --prompt='Type to search › ' \
+	--header="Resume a previous session  (as $profile, all accounts)" --header-first \
+	--footer='enter resume   esc quit   ↑/↓ browse') || true
 [ -n "$line" ] || exit 0
 id="${line%%$'\t'*}"
 

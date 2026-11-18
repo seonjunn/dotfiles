@@ -6,10 +6,11 @@
 # id still resumes across accounts, so this lists every rollout in the shared
 # directory and hands the chosen id to `ccsx resume`.
 #
-# Usage: ccsx-resume [-n N] [-l] [profile]
+# Usage: ccsx-resume [-n N] [-l] [profile] [codex options...]
 #   profile  ccsx profile to resume with (default: $CCS_CODEX_PROFILE)
 #   -n N     how many recent sessions to list (default 200)
 #   -l       print the list instead of picking
+#   codex options go to `ccsx resume` unchanged, e.g. ccsx-resume work --yolo
 #
 # Each profile's sessions/ must link to the shared directory; this script only reads.
 set -euo pipefail
@@ -19,15 +20,22 @@ PROFILES="$HOME/.ccs/codex-profiles.yaml"
 limit=200
 list_only=0
 
-while getopts "n:lh" opt; do
-	case "$opt" in
-	n) limit="$OPTARG" ;;
-	l) list_only=1 ;;
-	*) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+# Own options come first; the first argument that is not one of them starts what
+# goes to codex (getopts would reject codex's long options such as --yolo).
+while [ $# -gt 0 ]; do
+	case "$1" in
+	-n) limit="$2"; shift 2 ;;
+	-l) list_only=1; shift ;;
+	-h | --help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+	*) break ;;
 	esac
 done
-shift $((OPTIND - 1))
-profile="${1:-${CCS_CODEX_PROFILE:-}}"
+profile="${CCS_CODEX_PROFILE:-}"
+if [ $# -gt 0 ] && [ "${1#-}" = "$1" ]; then
+	profile="$1"
+	shift
+fi
+codex_args=("$@")
 
 # account_id -> profile name, for the "made by" column.
 declare -A owner=()
@@ -83,4 +91,4 @@ eval "$(ccsx auth use "$profile" --shell bash 2>/dev/null | grep '^export ')"
 if [ "$(readlink -f "$CODEX_HOME/sessions")" != "$(readlink -f "$SESSIONS")" ]; then
 	echo "ccsx-resume: $CODEX_HOME/sessions is not the shared $SESSIONS; resume may not find $id" >&2
 fi
-exec ccsx resume "$id"
+exec ccsx resume ${codex_args[@]+"${codex_args[@]}"} "$id"

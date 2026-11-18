@@ -28,7 +28,7 @@ buildNpmPackage {
   version = manifest.dependencies."@openai/codex";
   src = lib.cleanSource ./.;
   nodejs = nodejs_24;
-  npmDepsHash = "sha256-aBnQP7gUbMRmp8P/f6kh4HzXvpxbkcJruS7UlYH7Pgs=";
+  npmDepsHash = "sha256-kIsNlPjdb7QENuW+tfnjmyPsR7IFUgrsmjWpJBKKdSo=";
   npmFlags = [ "--ignore-scripts" ];
   dontNpmBuild = true;
   nativeBuildInputs = [ makeWrapper ];

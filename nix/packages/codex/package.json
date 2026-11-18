@@ -1,8 +1,8 @@
 {
   "name": "codex-nix",
-  "version": "0.169.0",
+  "version": "0.170.0",
   "private": true,
   "dependencies": {
-    "@openai/codex": "0.169.0"
+    "@openai/codex": "0.170.0"
   }
 }

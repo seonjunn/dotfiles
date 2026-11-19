@@ -6,8 +6,7 @@ description: Prepare slide decks and meeting material for the owner's research m
 # Meeting deck
 
 This skill holds principles and the workflow only. Project details (incidents, rejected words,
-measured examples) live in the project's own records; for the dike NPU project they are in
-`npu/reference/meeting-deck-details.md` in the dike repository.
+measured examples) live in the project's own records; read them before building a deck.
 
 A deck is a visual reference for a talk the owner gives, not a document the room reads. Every
 item on it must be something the owner understands and can defend.

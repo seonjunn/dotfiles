@@ -1,6 +1,6 @@
 ---
 name: session-export
-description: Export a conversation into a set of handoff documents — an index plus topic documents plus a discard log — complete enough that a future Claude session with zero prior context can load them and continue the work. Use whenever the user asks to export, 내보내, 정리해서 문서로, 세션 정리, 이거 문서화해줘, wrap up this session, save this conversation, hand it off to the next session, or write up what we did here. Trigger even when the request is one casual word ("export", "정리해줘") and even when the conversation seems small enough to summarize directly — this skill exists because one-shot summaries silently drop constraints, corrections, and abandoned paths, and it defines the inventory, invalidation, and multi-pass verification rules that prevent that.
+description: Export a conversation into a set of handoff documents — an index plus topic documents plus a discard log — complete enough that a future Claude session with zero prior context can load them and continue the work. Use whenever the user asks to export, 내보내, 정리해서 문서로, 세션 정리, 이거 문서화해줘, wrap up this session, save this conversation, hand it off to the next session, take a session checkpoint (세션 체크포인트), write a handover for another agent, or write up what we did here. Not for saving a model or weight checkpoint, and not for a bare "정리" about uncommitted work, which the global git rule defines as a per-item reset/commit/leave decision. Trigger even when the request is one casual word ("export", "세션 정리") and even when the conversation seems small enough to summarize directly — this skill exists because one-shot summaries silently drop constraints, corrections, and abandoned paths, and it defines the inventory, invalidation, and multi-pass verification rules that prevent that.
 ---
 
 # Session Export
@@ -188,6 +188,26 @@ Without this distinction a future session cites a guess as a finding. That is th
 
 **Never let the index outsource judgment.** If the next session must decide something, the index says so explicitly rather than leaving the decision implicit in an unmentioned gap.
 
+## Handover and checkpoint
+
+These rules apply when the export is a hand-off to another session or agent that will take the work over, or a checkpoint taken mid-work.
+
+**Open with the big picture, not with where the session stopped.** The first body document starts from the goal and the reading order, then the measurements, then what this session moved, then the next tasks with the goal each one serves.
+
+**Quote the owner's instructions verbatim** and list what is decided, what is pending, and which rules apply to the work. Name how the previous session can be reached, if it can.
+
+**State the receiver's job.** One job, what is out of scope, where the predecessor stopped, and which shared resources (running processes, checkouts, builds, devices) must not be touched.
+
+**Mark superseded directions and permissions.** A direction that was replaced is marked as such, and its queued work must not be resumed automatically. Old permissions (resources, scopes, commit grants) are history; the newest owner instruction replaces earlier ones.
+
+**Checkpoint variant.** A checkpoint says what it is not (for example: not a full export, restore not tested). It separates verified changes from unfinished ones, records each checkout's identity by commit or by byte comparison, never overwrites an earlier checkpoint, and does not merge or delete anything.
+
+The receiving session gets these instructions in `index.md` (see the template):
+
+- re-derive the premise of every inherited number before using it, since handoffs carry conclusions and drop their conditions;
+- before taking ownership, check live processes and checkouts rather than trusting agent names, which are local to the process that made them;
+- after a restart, never kill processes others started; resume from the notes.
+
 ## Templates
 
 ### `index.md`
@@ -203,6 +223,7 @@ Exported YYYY-MM-DD HH:MM · <project or repo>
 > Handoff export, complete on its own. The documents below are meant to be read together.
 > Before proposing any new direction, check `discarded.md` — several options are already rejected there.
 > <if applicable> Supersedes the earlier export `<prior name or timestamp>`; nothing from it is required.
+> Before continuing: re-derive the premise of any number you reuse; check live processes and checkouts before taking ownership; do not kill processes you did not start.
 
 ## Documents
 | file | contents | read when |

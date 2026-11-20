@@ -1,41 +1,96 @@
 #!/usr/bin/env bash
-# Resume any Codex session from any ccsx profile.
+# Run Codex with a ccsx auth profile and resume across all shared sessions.
 #
 # Codex's own picker (`codex resume`, `--last`) lists only threads created by the
 # current account, even when the profiles share one sessions directory. A session
 # id still resumes across accounts, so this lists every rollout in the shared
 # directory and hands the chosen id to `ccsx resume`.
 #
-# Usage: ccsx-resume [-n N] [-l] [profile] [codex options...]
-#   profile  ccsx profile to resume with (default: $CCS_CODEX_PROFILE)
-#   -n N     how many recent sessions to list (default 200)
-#   -l       print the list instead of picking
-#   codex options go to `ccsx resume` unchanged, e.g. ccsx-resume work --yolo
+# Usage: cxs [auth-profile] [--resume|resume] [options...]
+#   auth-profile  an existing ccsx auth profile; otherwise ccsx selects the default
+#   --resume      pick from every account's shared sessions
+#   resume ID     resume a session directly
+#   -n N, -l      resume picker: list N recent sessions, or print the list
+#   Other options and prompts go to Codex unchanged; execution defaults to --yolo.
 #
 # Each profile's sessions/ must link to the shared directory; this script only reads.
 set -euo pipefail
 
-SESSIONS="${CODEX_SHARED_SESSIONS:-$HOME/.codex/sessions}"
-PROFILES="$HOME/.ccs/codex-profiles.yaml"
-limit=200
-list_only=0
+usage() {
+	printf '%s\n' \
+		'Usage: cxs [AUTH] [--resume|resume] [options...]' \
+		'' \
+		'  cxs                 start with the default ccsx auth' \
+		'  cxs AUTH            start with an existing ccsx auth profile' \
+		'  cxs AUTH --resume   pick from all accounts in the shared sessions' \
+		'' \
+		'New runs and resumes default to --yolo.' \
+		'Resume picker options: -n N (default 200), -l (print the list).' \
+		'Use cxs [AUTH] resume ID to resume directly. Other options go to Codex.'
+}
 
-# Own options come first; the first argument that is not one of them starts what
-# goes to codex (getopts would reject codex's long options such as --yolo).
-while [ $# -gt 0 ]; do
-	case "$1" in
-	-n) limit="$2"; shift 2 ;;
-	-l) list_only=1; shift ;;
-	-h | --help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-	*) break ;;
-	esac
-done
-profile="${CCS_CODEX_PROFILE:-}"
-if [ $# -gt 0 ] && [ "${1#-}" = "$1" ]; then
+profile=''
+if [ $# -gt 0 ] && [ -d "$HOME/.ccs/codex-instances/$1" ]; then
 	profile="$1"
 	shift
 fi
-codex_args=("$@")
+
+resume=0
+codex_args=()
+for arg in "$@"; do
+	case "$arg" in
+	--resume) resume=1 ;;
+	*) codex_args+=("$arg") ;;
+	esac
+done
+if [ "${codex_args[0]:-}" = resume ]; then
+	resume=1
+	codex_args=("${codex_args[@]:1}")
+fi
+yolo_args=(--yolo)
+for arg in "${codex_args[@]}"; do
+	case "$arg" in
+	-h | --help) usage; exit 0 ;;
+	--yolo | --dangerously-bypass-approvals-and-sandbox) yolo_args=() ;;
+	esac
+done
+
+run_codex() {
+	if [ -n "$profile" ]; then
+		exec env CCS_CODEX_PROFILE="$profile" ccsx "$@"
+	else
+		exec ccsx "$@"
+	fi
+}
+
+if [ "$resume" = 0 ]; then run_codex "${yolo_args[@]}" "${codex_args[@]}"; fi
+
+limit=200
+list_only=0
+set -- "${codex_args[@]}"
+codex_args=()
+while [ $# -gt 0 ]; do
+	case "$1" in
+	-n)
+		if [ $# -lt 2 ] || [[ ! "$2" =~ ^[1-9][0-9]*$ ]]; then
+			echo 'cxs: -n requires a positive session count' >&2
+			exit 2
+		fi
+		limit="$2"; shift 2 ;;
+	-l) list_only=1; shift ;;
+	*) codex_args+=("$1"); shift ;;
+	esac
+done
+# A direct id or Codex's own --last/--all selection needs no shared picker.
+for arg in "${codex_args[@]}"; do
+	case "$arg" in
+	--last | --all | [0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-*)
+		if [ "$list_only" = 0 ]; then run_codex resume "${yolo_args[@]}" "${codex_args[@]}"; fi ;;
+	esac
+done
+
+SESSIONS="${CODEX_SHARED_SESSIONS:-$HOME/.codex/sessions}"
+PROFILES="$HOME/.ccs/codex-profiles.yaml"
 
 # account_id -> profile name, for the "made by" column.
 declare -A owner=()
@@ -49,7 +104,7 @@ if [ "$(uname)" = Darwin ]; then stat_mtime=(stat -f '%m%t%N'); else stat_mtime=
 
 # Thread titles Codex generated ("thread_name"). Each CODEX_HOME keeps its own index, so read
 # the shared home and every profile; the latest entry for an id wins.
-titles=$(cat "$HOME/.codex/session_index.jsonl" "$HOME"/.ccs/codex-instances/*/session_index.jsonl 2>/dev/null |
+titles=$({ cat "$HOME/.codex/session_index.jsonl" "$HOME"/.ccs/codex-instances/*/session_index.jsonl 2>/dev/null || true; } |
 	jq -cs 'map(select(.id and .thread_name)) | sort_by(.updated_at) | map({(.id): .thread_name}) | add // {}' 2>/dev/null ||
 	echo '{}')
 
@@ -90,22 +145,15 @@ if [ "$list_only" = 1 ]; then
 	exit 0
 fi
 
-[ -n "$profile" ] || { echo "ccsx-resume: name a profile or set CCS_CODEX_PROFILE (ccsx auth show)" >&2; exit 2; }
-command -v fzf >/dev/null || { echo "ccsx-resume: fzf not found; use -l and run: ccsx resume <id>" >&2; exit 2; }
+command -v fzf >/dev/null || { echo "cxs: fzf not found; use resume -l and run: cxs resume <id>" >&2; exit 2; }
 
 # fzf closes the pipe once a line is picked, so the lister dies of SIGPIPE and pipefail
 # fails the pipeline; judge by the selection instead of the exit status.
 line=$(list_sessions | fzf --ansi --delimiter='\t' --with-nth=2 --no-sort \
 	--layout=reverse --info=inline-right --pointer='›' --gutter=' ' --prompt='Type to search › ' \
-	--header="Resume a previous session  (as $profile, all accounts)" --header-first \
+	--header="Resume a previous session  (as ${profile:-${CCS_CODEX_PROFILE:-default}}, all accounts)" --header-first \
 	--footer='enter resume   esc quit   ↑/↓ browse') || true
 [ -n "$line" ] || exit 0
 id="${line%%$'\t'*}"
 
-# Select the profile the same way `ccsx auth use` does for an interactive shell.
-eval "$(ccsx auth use "$profile" --shell bash 2>/dev/null | grep '^export ')"
-[ -n "${CODEX_HOME:-}" ] || { echo "ccsx-resume: unknown profile: $profile" >&2; exit 2; }
-if [ "$(readlink -f "$CODEX_HOME/sessions")" != "$(readlink -f "$SESSIONS")" ]; then
-	echo "ccsx-resume: $CODEX_HOME/sessions is not the shared $SESSIONS; resume may not find $id" >&2
-fi
-exec ccsx resume ${codex_args[@]+"${codex_args[@]}"} "$id"
+run_codex resume "${yolo_args[@]}" "$id" "${codex_args[@]}"

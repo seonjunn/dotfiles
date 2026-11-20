@@ -24,7 +24,7 @@ buildNpmPackage {
   version = manifest.dependencies."@kaitranntt/ccs";
   src = lib.cleanSource ./.;
   nodejs = nodejs_24;
-  npmDepsHash = "sha256-V38HdeSm+2XRQsZS/PPcwxn7InOd4Icz/1j4toFqfgc=";
+  npmDepsHash = "sha256-8obkvFfZckXNtPV8gvjtrtuxUcLliSBX5Nji+0qCjkI=";
   npmFlags = [ "--ignore-scripts" ];
   dontNpmBuild = true;
   nativeBuildInputs = [ makeWrapper ];
